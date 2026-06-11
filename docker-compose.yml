@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cpp_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: client_project_portal
+      POSTGRES_USER: cpp_user
+      POSTGRES_PASSWORD: cpp_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cpp_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cpp_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - cpp_network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: cpp_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - cpp_network
+
+volumes:
+  postgres_data:
+
+networks:
+  cpp_network:
+    driver: bridge
