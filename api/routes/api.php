@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OrganisationController;
+use App\Http\Controllers\Api\ClientController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -20,4 +21,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/organisation/current', [OrganisationController::class, 'current']);
+
+    Route::apiResource('clients', ClientController::class);
 });

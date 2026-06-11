@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'; //runtime value
 import type { FormEvent } from 'react'; //TypeScript-only type
 import { getCurrentOrganisation } from './features/organisations/organisationApi';
+import { createClient, getClients } from './features/clients/clientApi';
 import {
     getMe,
     login,
@@ -8,6 +9,7 @@ import {
     register,
 } from './features/auth/authApi';
 import type { User, Organisation } from './features/auth/types';
+import type { Client } from './features/clients/types';
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
@@ -27,6 +29,12 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [clients, setClients] = useState<Client[]>([]);
+    const [clientName, setClientName] = useState('');
+    const [clientContactName, setClientContactName] = useState('');
+    const [clientContactEmail, setClientContactEmail] = useState('');
+    const [clientError, setClientError] = useState<String | null>(null);
+
     function saveToken(nextToken: string) {
         localStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
         setToken(nextToken);
@@ -37,6 +45,7 @@ function App() {
         setToken(null);
         setUser(null);
         setOrganisation(null);
+        setClients([]);
     }
 
     useEffect(() => {
@@ -47,10 +56,12 @@ function App() {
         Promise.all([
             getMe(token),
             getCurrentOrganisation(token),
+            getClients(token)
         ])
-            .then(([meResponse, organisationResponse]) => {
+            .then(([meResponse, organisationResponse, clientsResponse]) => {
                 setUser(meResponse.user);
                 setOrganisation(organisationResponse.organisation);
+                setClients(clientsResponse.clients)
             })
             .catch(() => {
                 clearAuth();
@@ -102,6 +113,33 @@ function App() {
         }
     }
 
+    async function handleCreateClient(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!token) {
+            return;
+        }
+
+        setClientError(null);
+
+        try {
+            const response = await createClient(token, {
+                name: clientName,
+                contact_name: clientContactName || undefined,
+                contact_email: clientContactEmail || undefined,
+                status: 'active',
+            });
+
+            setClients((currentClients) => [response.client, ...currentClients]);
+
+            setClientName('');
+            setClientContactName('');
+            setClientContactEmail('');
+        } catch (error) {
+            setClientError(error instanceof Error ? error.message : 'Something went wrong');
+        }
+    }
+
     if (user) {
         return (
             <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
@@ -126,6 +164,77 @@ function App() {
                         </p>
                     )}
                     <p>This is a protected area. Auth is working.</p>
+                </section>
+
+                <section
+                    style={{
+                        border: '1px solid #ddd',
+                        borderRadius: '0.75rem',
+                        padding: '1rem',
+                        maxWidth: '40rem',
+                        marginTop: '1rem',
+                    }}
+                >
+                    <h2>Clients</h2>
+
+                    <form
+                        onSubmit={handleCreateClient}
+                        style={{
+                            display: 'grid',
+                            gap: '0.75rem',
+                            marginBottom: '1rem',
+                        }}
+                    >
+                        <label>
+                            Client name
+                            <input
+                                value={clientName}
+                                onChange={(event) => setClientName(event.target.value)}
+                                style={{ display: 'block', width: '100%' }}
+                                required
+                            />
+                        </label>
+
+                        <label>
+                            Contact name
+                            <input
+                                value={clientContactName}
+                                onChange={(event) => setClientContactName(event.target.value)}
+                                style={{ display: 'block', width: '100%' }}
+                            />
+                        </label>
+
+                        <label>
+                            Contact email
+                            <input
+                                type="email"
+                                value={clientContactEmail}
+                                onChange={(event) => setClientContactEmail(event.target.value)}
+                                style={{ display: 'block', width: '100%' }}
+                            />
+                        </label>
+
+                        {clientError && <p style={{ color: 'red' }}>{clientError}</p>}
+
+                        <button type="submit">
+                            Add client
+                        </button>
+                    </form>
+
+                    {clients.length === 0 ? (
+                        <p>No clients yet.</p>
+                    ) : (
+                        <ul>
+                            {clients.map((client) => (
+                                <li key={client.id}>
+                                    <strong>{client.name}</strong>
+                                    {client.contact_email && <> — {client.contact_email}</>}
+                                    {' '}
+                                    <span>({client.status})</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </section>
 
                 <button
