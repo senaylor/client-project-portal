@@ -8,6 +8,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\Organisation;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -17,20 +20,39 @@ class AuthController extends Controller
                                             'name' => ['required', 'string', 'max:255'],
                                             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
                                             'password' => ['required', 'string', 'min:8', 'confirmed'],
+                                            'organisation_name' => ['nullable', 'string', 'max:255'],
                                         ]);
 
-        $user = User::query()->create([
-                                          'name' => $validated['name'],
-                                          'email' => strtolower($validated['email']),
-                                          'password' => Hash::make($validated['password']),
-                                      ]);
+        $result = DB::transaction(function () use ($validated) {
+            $user = User::query()->create([
+                                              'name' => $validated['name'],
+                                              'email' => strtolower($validated['email']),
+                                              'password' => Hash::make($validated['password']),
+                                          ]);
 
-        $token = $user->createToken('web')->plainTextToken;
+            $organisationName = $validated['organisation_name']
+                                ?? "{$user->name}'s Organisation";
 
-        return response()->json([
-                                    'user' => $user,
-                                    'token' => $token,
-                                ], 201);
+            $organisation = Organisation::query()->create([
+                                                              'owner_id' => $user->id,
+                                                              'name' => $organisationName,
+                                                              'slug' => $this->generateOrganisationSlug($organisationName),
+                                                          ]);
+
+            $organisation->users()->attach($user->id, [
+                'role' => 'owner',
+            ]);
+
+            $token = $user->createToken('web')->plainTextToken;
+
+            return [
+                'user' => $user,
+                'organisation' => $organisation,
+                'token' => $token,
+            ];
+        });
+
+        return response()->json($result, 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -72,5 +94,19 @@ class AuthController extends Controller
         return response()->json([
                                     'message' => 'Logged out successfully.',
                                 ]);
+    }
+
+    private function generateOrganisationSlug(string $name): string
+    {
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while (Organisation::query()->where('slug', $slug)->exists()) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
     }
 }

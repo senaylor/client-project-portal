@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'; //runtime value
 import type { FormEvent } from 'react'; //TypeScript-only type
+import { getCurrentOrganisation } from './features/organisations/organisationApi';
 import {
     getMe,
     login,
     logout,
     register,
 } from './features/auth/authApi';
-import type { User } from './features/auth/types';
+import type { User, Organisation } from './features/auth/types';
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
@@ -16,6 +17,9 @@ function App() {
     );
 
     const [user, setUser] = useState<User | null>(null);
+
+    const [organisation, setOrganisation] = useState<Organisation | null>(null);
+
     const [mode, setMode] = useState<'login' | 'register'>('register');
     const [name, setName] = useState('Tom Denver');
     const [email, setEmail] = useState('tom@example.com');
@@ -32,6 +36,7 @@ function App() {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
         setToken(null);
         setUser(null);
+        setOrganisation(null);
     }
 
     useEffect(() => {
@@ -39,9 +44,13 @@ function App() {
             return;
         }
 
-        getMe(token)
-            .then((response) => {
-                setUser(response.user);
+        Promise.all([
+            getMe(token),
+            getCurrentOrganisation(token),
+        ])
+            .then(([meResponse, organisationResponse]) => {
+                setUser(meResponse.user);
+                setOrganisation(organisationResponse.organisation);
             })
             .catch(() => {
                 clearAuth();
@@ -70,6 +79,9 @@ function App() {
 
             saveToken(response.token);
             setUser(response.user);
+            if (response.organisation) {
+                setOrganisation(response.organisation);
+            }
         } catch (error) {
             setError(error instanceof Error ? error.message : 'Something went wrong');
         } finally {
@@ -108,6 +120,11 @@ function App() {
                     }}
                 >
                     <h2>Dashboard</h2>
+                    {organisation && (
+                        <p>
+                            Current organisation: <strong>{organisation.name}</strong>
+                        </p>
+                    )}
                     <p>This is a protected area. Auth is working.</p>
                 </section>
 
