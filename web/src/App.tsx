@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'; //runtime value
+import type { FormEvent } from 'react'; //TypeScript-only type
 import {
     getMe,
     login,
