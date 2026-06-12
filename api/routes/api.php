@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OrganisationController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\ProjectController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -23,4 +24,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/organisation/current', [OrganisationController::class, 'current']);
 
     Route::apiResource('clients', ClientController::class);
+    Route::apiResource('projects', ProjectController::class);
 });
