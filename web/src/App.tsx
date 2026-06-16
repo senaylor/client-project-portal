@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'; //TypeScript-only type
 import { getCurrentOrganisation } from './features/organisations/organisationApi';
 import { createClient, getClients } from './features/clients/clientApi';
 import { createProject, getProjects } from './features/projects/projectApi';
+import { createTask, getTasks } from './features/tasks/taskApi.ts';
 
 import {
     getMe,
@@ -14,6 +15,7 @@ import {
 import type { User, Organisation } from './features/auth/types';
 import type { Client } from './features/clients/types';
 import type { Project } from './features/projects/types';
+import type { Task } from './features/tasks/types'
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
@@ -26,7 +28,7 @@ function App() {
 
     const [organisation, setOrganisation] = useState<Organisation | null>(null);
 
-    const [mode, setMode] = useState<'login' | 'register'>('register');
+    const [mode, setMode] = useState<'login' | 'register'>('login');
     const [name, setName] = useState('Tom Denver');
     const [email, setEmail] = useState('tom@example.com');
     const [password, setPassword] = useState('password123');
@@ -46,6 +48,14 @@ function App() {
     const [projectDueDate, setProjectDueDate] = useState('');
     const [projectError, setProjectError] = useState<String | null>(null);
 
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [taskProjectId, setTaskProjectId] = useState('');
+    const [taskTitle, setTaskTitle] = useState('');
+    const [taskDescription, setTaskDescription] = useState('');
+    const [taskPriority, setTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
+    const [taskDueDate, setTaskDueDate] = useState('');
+    const [taskError, setTaskError] = useState<string | null>(null);
+
     function saveToken(nextToken: string) {
         localStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
         setToken(nextToken);
@@ -58,6 +68,7 @@ function App() {
         setOrganisation(null);
         setClients([]);
         setProjects([]);
+        setTasks([]);
     }
 
     useEffect(() => {
@@ -70,12 +81,14 @@ function App() {
             getCurrentOrganisation(token),
             getClients(token),
             getProjects(token),
+            getTasks(token),
         ])
-            .then(([meResponse, organisationResponse, clientsResponse, projectsResponse]) => {
+            .then(([meResponse, organisationResponse, clientsResponse, projectsResponse, tasksResponse]) => {
                 setUser(meResponse.user);
                 setOrganisation(organisationResponse.organisation);
                 setClients(clientsResponse.clients);
                 setProjects(projectsResponse.projects);
+                setTasks(tasksResponse.tasks);
             })
             .catch(() => {
                 clearAuth();
@@ -174,12 +187,43 @@ function App() {
             });
 
             setProjects((currentProjects) => [response.project, ...currentProjects]);
+            setTaskProjectId(String(response.project.id));
 
             setProjectName('');
             setProjectDescription('');
             setProjectDueDate('');
         } catch (error) {
             setProjectError(error instanceof Error ? error.message : 'Something went wrong');
+        }
+    }
+
+    async function handleCreateTask(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!token) {
+            return;
+        }
+
+        setTaskError(null);
+
+        try {
+            const response = await createTask(token, {
+                project_id: Number(taskProjectId),
+                title: taskTitle,
+                description: taskDescription || undefined,
+                status: 'todo',
+                priority: taskPriority,
+                due_date: taskDueDate || undefined,
+            });
+
+            setTasks((currentTasks) => [response.task, ...currentTasks]);
+
+            setTaskTitle('');
+            setTaskDescription('');
+            setTaskPriority('medium');
+            setTaskDueDate('');
+        } catch (error) {
+            setTaskError(error instanceof Error ? error.message : 'Something went wrong');
         }
     }
 
@@ -368,6 +412,117 @@ function App() {
                                     {' '}
                                     <span>({project.status})</span>
                                     {project.due_date && <> — due {project.due_date.slice(0, 10)}</>}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+
+                <section
+                    style={{
+                        border: '1px solid #ddd',
+                        borderRadius: '0.75rem',
+                        padding: '1rem',
+                        maxWidth: '40rem',
+                        marginTop: '1rem',
+                    }}
+                >
+                    <h2>Tasks</h2>
+
+                    {projects.length === 0 ? (
+                        <p>Create a project before adding tasks.</p>
+                    ) : (
+                        <form
+                            onSubmit={handleCreateTask}
+                            style={{
+                                display: 'grid',
+                                gap: '0.75rem',
+                                marginBottom: '1rem',
+                            }}
+                        >
+                            <label>
+                                Project
+                                <select
+                                    value={taskProjectId}
+                                    onChange={(event) => setTaskProjectId(event.target.value)}
+                                    style={{ display: 'block', width: '100%' }}
+                                    required
+                                >
+                                    <option value="">Select a project</option>
+
+                                    {projects.map((project) => (
+                                        <option key={project.id} value={project.id}>
+                                            {project.name}
+                                            {project.client ? ` — ${project.client.name}` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label>
+                                Task title
+                                <input
+                                    value={taskTitle}
+                                    onChange={(event) => setTaskTitle(event.target.value)}
+                                    style={{ display: 'block', width: '100%' }}
+                                    required
+                                />
+                            </label>
+
+                            <label>
+                                Description
+                                <textarea
+                                    value={taskDescription}
+                                    onChange={(event) => setTaskDescription(event.target.value)}
+                                    style={{ display: 'block', width: '100%' }}
+                                />
+                            </label>
+
+                            <label>
+                                Priority
+                                <select
+                                    value={taskPriority}
+                                    onChange={(event) =>
+                                        setTaskPriority(event.target.value as 'low' | 'medium' | 'high')
+                                    }
+                                    style={{ display: 'block', width: '100%' }}
+                                >
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                Due date
+                                <input
+                                    type="date"
+                                    value={taskDueDate}
+                                    onChange={(event) => setTaskDueDate(event.target.value)}
+                                    style={{ display: 'block', width: '100%' }}
+                                />
+                            </label>
+
+                            {taskError && <p style={{ color: 'red' }}>{taskError}</p>}
+
+                            <button type="submit">
+                                Add task
+                            </button>
+                        </form>
+                    )}
+
+                    {tasks.length === 0 ? (
+                        <p>No tasks yet.</p>
+                    ) : (
+                        <ul>
+                            {tasks.map((task) => (
+                                <li key={task.id}>
+                                    <strong>{task.title}</strong>
+                                    {task.project && <> — {task.project.name}</>}
+                                    {task.project?.client && <> / {task.project.client.name}</>}
+                                    {' '}
+                                    <span>({task.status}, {task.priority})</span>
+                                    {task.due_date && <> — due {task.due_date.slice(0, 10)}</>}
                                 </li>
                             ))}
                         </ul>

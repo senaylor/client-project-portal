@@ -4,44 +4,45 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Project extends Model
+class Task extends Model
 {
     protected $fillable = [
         'organisation_id',
-        'client_id',
+        'project_id',
         'created_by',
-        'name',
+        'assigned_to',
+        'title',
         'description',
         'status',
+        'priority',
         'due_date',
     ];
 
-    protected function casts() : array
+    protected function casts(): array
     {
         return [
             'due_date' => 'date',
         ];
     }
 
-    public function organisation() : BelongsTo
+    public function organisation(): BelongsTo
     {
         return $this->belongsTo(Organisation::class);
     }
 
-    public function client() : BelongsTo
+    public function project(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Project::class);
     }
 
-    public function creator() : BelongsTo
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function tasks() : HasMany
+    public function assignee(): BelongsTo
     {
-        return $this->hasMany(Task::class);
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 }
