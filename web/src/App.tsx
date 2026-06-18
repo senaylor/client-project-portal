@@ -4,6 +4,7 @@ import { getCurrentOrganisation } from './features/organisations/organisationApi
 import { createClient, getClients } from './features/clients/clientApi';
 import { createProject, getProjects } from './features/projects/projectApi';
 import { createTask, getTasks } from './features/tasks/taskApi.ts';
+import { getDashboard } from "./features/dashboard/dashboardApi.ts";
 
 import {
     getMe,
@@ -16,6 +17,7 @@ import type { User, Organisation } from './features/auth/types';
 import type { Client } from './features/clients/types';
 import type { Project } from './features/projects/types';
 import type { Task } from './features/tasks/types'
+import type { DashboardSummary } from "./features/dashboard/types.ts";
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
@@ -56,6 +58,8 @@ function App() {
     const [taskDueDate, setTaskDueDate] = useState('');
     const [taskError, setTaskError] = useState<string | null>(null);
 
+    const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
+
     function saveToken(nextToken: string) {
         localStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
         setToken(nextToken);
@@ -69,6 +73,7 @@ function App() {
         setClients([]);
         setProjects([]);
         setTasks([]);
+        setDashboardSummary(null);
     }
 
     useEffect(() => {
@@ -82,13 +87,20 @@ function App() {
             getClients(token),
             getProjects(token),
             getTasks(token),
+            getDashboard(token),
         ])
-            .then(([meResponse, organisationResponse, clientsResponse, projectsResponse, tasksResponse]) => {
+            .then(([meResponse,
+                    organisationResponse,
+                    clientsResponse,
+                    projectsResponse,
+                    tasksResponse,
+                    dashboardSummary]) => {
                 setUser(meResponse.user);
                 setOrganisation(organisationResponse.organisation);
                 setClients(clientsResponse.clients);
                 setProjects(projectsResponse.projects);
                 setTasks(tasksResponse.tasks);
+                setDashboardSummary(dashboardSummary.summary);
             })
             .catch(() => {
                 clearAuth();
@@ -158,6 +170,7 @@ function App() {
             });
 
             setClients((currentClients) => [response.client, ...currentClients]);
+            await refreshDashboardSummary(token);
             setProjectClientId(String(response.client.id));
 
             setClientName('');
@@ -187,6 +200,7 @@ function App() {
             });
 
             setProjects((currentProjects) => [response.project, ...currentProjects]);
+            await refreshDashboardSummary(token);
             setTaskProjectId(String(response.project.id));
 
             setProjectName('');
@@ -217,6 +231,7 @@ function App() {
             });
 
             setTasks((currentTasks) => [response.task, ...currentTasks]);
+            await refreshDashboardSummary(token);
 
             setTaskTitle('');
             setTaskDescription('');
@@ -227,6 +242,11 @@ function App() {
         }
     }
 
+    async function refreshDashboardSummary(currentToken: string) {
+        const response = await getDashboard(currentToken);
+        setDashboardSummary(response.summary);
+    }
+
     if (user) {
         return (
             <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
@@ -235,6 +255,78 @@ function App() {
                 <p>
                     Signed in as <strong>{user.name}</strong> ({user.email})
                 </p>
+
+                {dashboardSummary && (
+                    <section
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                            gap: '1rem',
+                            maxWidth: '50rem',
+                            marginTop: '1rem',
+                            marginBottom: '1rem',
+                        }}
+                    >
+                        <div
+                            style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '0.75rem',
+                                padding: '1rem',
+                            }}
+                        >
+                            <strong>Total clients</strong>
+                            <p style={{ fontSize: '2rem', margin: 0 }}>
+                                {dashboardSummary.total_clients}
+                            </p>
+                        </div>
+
+                        <div
+                            style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '0.75rem',
+                                padding: '1rem',
+                            }}
+                        >
+                            <strong>Active projects</strong>
+                            <p style={{ fontSize: '2rem', margin: 0 }}>
+                                {dashboardSummary.active_projects}
+                            </p>
+                        </div>
+
+                        <div
+                            style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '0.75rem',
+                                padding: '1rem',
+                            }}
+                        >
+                            <strong>Open tasks</strong>
+                            <p style={{ fontSize: '2rem', margin: 0 }}>
+                                {dashboardSummary.open_tasks}
+                            </p>
+                        </div>
+
+                        <div
+                            style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '0.75rem',
+                                padding: '1rem',
+                            }}
+                        >
+                            <strong>Overdue tasks</strong>
+                            <p style={{ fontSize: '2rem', margin: 0 }}>
+                                {dashboardSummary.overdue_tasks}
+                            </p>
+                        </div>
+                    </section>
+                )}
+
+                {dashboardSummary?.overdue_tasks ? (
+                  <p style={{ color: 'darkred' }}>
+                      You have {dashboardSummary.overdue_tasks} overdue task
+                      {dashboardSummary.overdue_tasks === 1 ? '' : 's'}.
+                  </p>
+                ) : null}
 
                 <section
                     style={{

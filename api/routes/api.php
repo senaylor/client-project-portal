@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\OrganisationController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ProjectController;
@@ -23,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/organisation/current', [OrganisationController::class, 'current']);
+    Route::get('/dashboard', DashboardController::class);
 
     Route::apiResource('clients', ClientController::class);
     Route::apiResource('projects', ProjectController::class);
