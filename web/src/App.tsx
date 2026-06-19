@@ -7,23 +7,30 @@ import { createClient, getClients } from './features/clients/clientApi';
 import { createProject, getProjects } from './features/projects/projectApi';
 import { createTask, getTasks } from './features/tasks/taskApi.ts';
 import { getDashboard } from "./features/dashboard/dashboardApi.ts";
-
 import {
     getMe,
     login,
     logout,
     register,
 } from './features/auth/authApi';
+import {
+    addTeamMember,
+    getTeam,
+    removeTeamMember,
+    updateTeamMemberRole,
+} from "./features/team/teamApi.ts";
 
 import type { User, Organisation } from './features/auth/types';
 import type { Client } from './features/clients/types';
 import type { Project } from './features/projects/types';
 import type { Task } from './features/tasks/types'
 import type { DashboardSummary } from "./features/dashboard/types.ts";
+import type { TeamMember, TeamRole } from "./features/team/types.ts";
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
 function App() {
+
     const [token, setToken] = useState<string | null>(() =>
         localStorage.getItem(TOKEN_STORAGE_KEY),
     );
@@ -62,6 +69,20 @@ function App() {
 
     const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
 
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [teamEmail, setTeamEmail] = useState('');
+    const [teamRole, setTeamRole] = useState<Exclude<TeamRole, 'owner'>>('member');
+    const [teamError, setTeamError] = useState<string | null>(null);
+
+    const currentMember = user
+        ? teamMembers.find((member) => member.id === user.id)
+        : null;
+
+    const currentRole = currentMember?.role?.trim().toLowerCase();
+
+    const canManageTeam = ['owner', 'admin'].includes(currentRole ?? '');
+    const canChangeRoles = currentRole === 'owner';
+
     function saveToken(nextToken: string) {
         localStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
         setToken(nextToken);
@@ -76,6 +97,7 @@ function App() {
         setProjects([]);
         setTasks([]);
         setDashboardSummary(null);
+        setTeamMembers([]);
     }
 
     useEffect(() => {
@@ -90,23 +112,28 @@ function App() {
             getProjects(token),
             getTasks(token),
             getDashboard(token),
+            getTeam(token),
         ])
             .then(([meResponse,
-                    organisationResponse,
-                    clientsResponse,
-                    projectsResponse,
-                    tasksResponse,
-                    dashboardSummary]) => {
+                       organisationResponse,
+                       clientsResponse,
+                       projectsResponse,
+                       tasksResponse,
+                       dashboardSummary,
+                       teamResponse,
+                   ]) => {
                 setUser(meResponse.user);
                 setOrganisation(organisationResponse.organisation);
                 setClients(clientsResponse.clients);
                 setProjects(projectsResponse.projects);
                 setTasks(tasksResponse.tasks);
                 setDashboardSummary(dashboardSummary.summary);
+                setTeamMembers(teamResponse.members);
             })
             .catch(() => {
                 clearAuth();
             });
+
     }, [token]);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -249,6 +276,73 @@ function App() {
         setDashboardSummary(response.summary);
     }
 
+    async function handleAddTeamMember(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        if (!token) {
+            return;
+        }
+
+        setTeamError(null);
+
+        try {
+            const response = await addTeamMember(token, {
+                email: teamEmail,
+                role: teamRole,
+            });
+
+            setTeamMembers((currentMembers) => [
+                ...currentMembers,
+                response.member,
+            ]);
+
+            setTeamEmail('');
+            setTeamRole('member');
+        } catch (error) {
+            setTeamError(error instanceof Error ? error.message : 'Something went wrong');
+        }
+    }
+
+    async function handleChangeTeamRole(member: TeamMember, role: Exclude<TeamRole, 'owner'>) {
+        if (!token) {
+            return;
+        }
+
+        setTeamError(null);
+
+        try {
+            const response = await updateTeamMemberRole(token, member.id, {
+                role,
+            });
+
+            setTeamMembers((currentMembers) =>
+                currentMembers.map((currentMember) =>
+                    currentMember.id === member.id ? response.member : currentMember,
+                ),
+            );
+        } catch (error) {
+            setTeamError(error instanceof Error ? error.message : 'Something went wrong');
+        }
+    }
+
+    async function handleRemoveTeamMember(member: TeamMember) {
+        if (!token) {
+            return;
+        }
+
+        setTeamError(null);
+
+        try {
+            await removeTeamMember(token, member.id);
+
+            setTeamMembers((currentMembers) =>
+                currentMembers.filter((currentMember) => currentMember.id !== member.id),
+            );
+        } catch (error) {
+            setTeamError(error instanceof Error ? error.message : 'Something went wrong');
+        }
+    }
+
     if (user) {
         return (
             <div className="app-shell">
@@ -272,6 +366,9 @@ function App() {
                         </a>
                         <a className="sidebar-nav-item" href="#tasks">
                             Tasks
+                        </a>
+                        <a className="sidebar-nav-item" href="#team">
+                            Team
                         </a>
                     </nav>
 
@@ -342,78 +439,76 @@ function App() {
                         ) : null}
 
                         <section className="content-grid">
-                            {
-                                <section className="card" id="clients">
-                                    <div className="card-header">
-                                        <div>
-                                            <h3 className="card-title">Clients</h3>
-                                            <p className="card-description">
-                                                Add the companies or people you manage work for.
-                                            </p>
-                                        </div>
-
-                                        <span className="badge">{clients.length}</span>
+                            <section className="card" id="clients">
+                                <div className="card-header">
+                                    <div>
+                                        <h3 className="card-title">Clients</h3>
+                                        <p className="card-description">
+                                            Add the companies or people you manage work for.
+                                        </p>
                                     </div>
 
-                                    <form onSubmit={handleCreateClient} className="form-grid">
-                                        <div className="form-row">
-                                            <label htmlFor="client-name">Client name</label>
-                                            <input
-                                                id="client-name"
-                                                className="input"
-                                                value={clientName}
-                                                onChange={(event) => setClientName(event.target.value)}
-                                                required
-                                            />
-                                        </div>
+                                    <span className="badge">{clients.length}</span>
+                                </div>
 
-                                        <div className="form-row">
-                                            <label htmlFor="client-contact-name">Contact name</label>
-                                            <input
-                                                id="client-contact-name"
-                                                className="input"
-                                                value={clientContactName}
-                                                onChange={(event) => setClientContactName(event.target.value)}
-                                            />
-                                        </div>
+                                <form onSubmit={handleCreateClient} className="form-grid">
+                                    <div className="form-row">
+                                        <label htmlFor="client-name">Client name</label>
+                                        <input
+                                            id="client-name"
+                                            className="input"
+                                            value={clientName}
+                                            onChange={(event) => setClientName(event.target.value)}
+                                            required
+                                        />
+                                    </div>
 
-                                        <div className="form-row">
-                                            <label htmlFor="client-contact-email">Contact email</label>
-                                            <input
-                                                id="client-contact-email"
-                                                className="input"
-                                                type="email"
-                                                value={clientContactEmail}
-                                                onChange={(event) => setClientContactEmail(event.target.value)}
-                                            />
-                                        </div>
+                                    <div className="form-row">
+                                        <label htmlFor="client-contact-name">Contact name</label>
+                                        <input
+                                            id="client-contact-name"
+                                            className="input"
+                                            value={clientContactName}
+                                            onChange={(event) => setClientContactName(event.target.value)}
+                                        />
+                                    </div>
 
-                                        {clientError && <p className="error-message">{clientError}</p>}
+                                    <div className="form-row">
+                                        <label htmlFor="client-contact-email">Contact email</label>
+                                        <input
+                                            id="client-contact-email"
+                                            className="input"
+                                            type="email"
+                                            value={clientContactEmail}
+                                            onChange={(event) => setClientContactEmail(event.target.value)}
+                                        />
+                                    </div>
 
-                                        <button type="submit" className="button">
-                                            Add client
-                                        </button>
-                                    </form>
+                                    {clientError && <p className="error-message">{clientError}</p>}
 
-                                    <hr />
+                                    <button type="submit" className="button">
+                                        Add client
+                                    </button>
+                                </form>
 
-                                    {clients.length === 0 ? (
-                                        <p className="empty-state">No clients yet.</p>
-                                    ) : (
-                                        <ul className="list">
-                                            {clients.map((client) => (
-                                                <li key={client.id} className="list-item">
-                                                    <div className="list-item-title">{client.name}</div>
-                                                    <div className="list-item-meta">
-                                                        {client.contact_email || 'No contact email'} · {client.status}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </section>
-                            }
-                            {<section className="card" id="projects">
+                                <hr />
+
+                                {clients.length === 0 ? (
+                                    <p className="empty-state">No clients yet.</p>
+                                ) : (
+                                    <ul className="list">
+                                        {clients.map((client) => (
+                                            <li key={client.id} className="list-item">
+                                                <div className="list-item-title">{client.name}</div>
+                                                <div className="list-item-meta">
+                                                    {client.contact_email || 'No contact email'} · {client.status}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </section>
+                            <section className="card" id="projects">
                                 <div className="card-header">
                                     <div>
                                         <h3 className="card-title">Projects</h3>
@@ -505,8 +600,8 @@ function App() {
                                         ))}
                                     </ul>
                                 )}
-                            </section>}
-                            {<section className="card" id="tasks">
+                            </section>
+                            <section className="card" id="tasks">
                                 <div className="card-header">
                                     <div>
                                         <h3 className="card-title">Tasks</h3>
@@ -636,7 +731,112 @@ function App() {
                                         ))}
                                     </ul>
                                 )}
-                            </section>}
+                            </section>
+                            <section className="card" id="team">
+                                <div className="card-header">
+                                    <div>
+                                        <h3 className="card-title">Team</h3>
+                                        <p className="card-description">
+                                            Manage organisation members and access levels.
+                                        </p>
+                                    </div>
+
+                                    <span className="badge">{teamMembers.length}</span>
+                                </div>
+
+                                <p className="list-item-meta">
+                                    Your role: <strong>{currentRole ?? 'unknown'}</strong>
+                                </p>
+
+                                {canManageTeam ? (
+                                    <form onSubmit={handleAddTeamMember} className="form-grid">
+                                        <div className="form-row">
+                                            <label htmlFor="team-email">User email</label>
+                                            <input
+                                                id="team-email"
+                                                className="input"
+                                                type="email"
+                                                value={teamEmail}
+                                                onChange={(event) => setTeamEmail(event.target.value)}
+                                                placeholder="existing.user@example.com"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="team-role">Role</label>
+                                            <select
+                                                id="team-role"
+                                                className="select"
+                                                value={teamRole}
+                                                onChange={(event) =>
+                                                    setTeamRole(event.target.value as Exclude<TeamRole, 'owner'>)
+                                                }
+                                            >
+                                                <option value="member">Member</option>
+                                                <option value="admin">Admin</option>
+                                            </select>
+                                        </div>
+
+                                        {teamError && <p className="error-message">{teamError}</p>}
+
+                                        <button type="submit" className="button">
+                                            Add team member
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <p className="empty-state">
+                                        You do not have permission to manage team members.
+                                    </p>
+                                )}
+
+                                <hr />
+
+                                {teamMembers.length === 0 ? (
+                                    <p className="empty-state">No team members yet.</p>
+                                ) : (
+                                    <ul className="list">
+                                        {teamMembers.map((member) => (
+                                            <li key={member.id} className="list-item">
+                                                <div className="list-item-title">{member.name}</div>
+                                                <div className="list-item-meta">{member.email}</div>
+
+                                                <div>
+                                                    <span className="badge">{member.role}</span>
+                                                </div>
+
+                                                {canManageTeam && member.role !== 'owner' && member.id !== user.id && (
+                                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                        {canChangeRoles && (
+                                                            <select
+                                                                className="select"
+                                                                value={member.role}
+                                                                onChange={(event) =>
+                                                                    handleChangeTeamRole(
+                                                                        member,
+                                                                        event.target.value as Exclude<TeamRole, 'owner'>,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <option value="member">Member</option>
+                                                                <option value="admin">Admin</option>
+                                                            </select>
+                                                        )}
+
+                                                        <button
+                                                            type="button"
+                                                            className="button ghost"
+                                                            onClick={() => handleRemoveTeamMember(member)}
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </section>
                         </section>
                     </main>
                 </div>

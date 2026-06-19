@@ -60,4 +60,28 @@ class User extends Authenticatable
         return $this->hasMany(Task::class, 'assigned_to');
     }
 
+    public function roleForOrganisation(Organisation $organisation): ?string
+    {
+        $membership = $this->organisations()
+                           ->where('organisations.id', $organisation->id)
+                           ->first();
+
+        return $membership?->pivot?->role;
+    }
+
+    public function isOwnerOf(Organisation $organisation): bool
+    {
+        return $this->roleForOrganisation($organisation) === 'owner';
+    }
+
+    public function isAdminOf(Organisation $organisation): bool
+    {
+        return $this->roleForOrganisation($organisation) === 'admin';
+    }
+
+    public function canManageTeamFor(Organisation $organisation): bool
+    {
+        return in_array($this->roleForOrganisation($organisation), ['owner', 'admin'], true);
+    }
+
 }
