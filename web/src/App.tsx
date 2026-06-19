@@ -1,3 +1,5 @@
+import './App.css';
+
 import { useEffect, useState } from 'react'; //runtime value
 import type { FormEvent } from 'react'; //TypeScript-only type
 import { getCurrentOrganisation } from './features/organisations/organisationApi';
@@ -249,461 +251,473 @@ function App() {
 
     if (user) {
         return (
-            <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-                <h1>Client Project Portal</h1>
+            <div className="app-shell">
+                <aside className="sidebar">
+                    <div className="sidebar-brand">
+                        <div className="sidebar-brand-title">Client Project Portal</div>
+                        <div className="sidebar-brand-subtitle">
+                            {organisation?.name ?? 'SaaS Workspace'}
+                        </div>
+                    </div>
 
-                <p>
-                    Signed in as <strong>{user.name}</strong> ({user.email})
-                </p>
+                    <nav className="sidebar-nav" aria-label="Main navigation">
+                        <a className="sidebar-nav-item active" href="#dashboard">
+                            Dashboard
+                        </a>
+                        <a className="sidebar-nav-item" href="#clients">
+                            Clients
+                        </a>
+                        <a className="sidebar-nav-item" href="#projects">
+                            Projects
+                        </a>
+                        <a className="sidebar-nav-item" href="#tasks">
+                            Tasks
+                        </a>
+                    </nav>
 
-                {dashboardSummary && (
-                    <section
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                            gap: '1rem',
-                            maxWidth: '50rem',
-                            marginTop: '1rem',
-                            marginBottom: '1rem',
-                        }}
-                    >
-                        <div
-                            style={{
-                                border: '1px solid #ddd',
-                                borderRadius: '0.75rem',
-                                padding: '1rem',
-                            }}
-                        >
-                            <strong>Total clients</strong>
-                            <p style={{ fontSize: '2rem', margin: 0 }}>
-                                {dashboardSummary.total_clients}
+                    <div className="sidebar-footer">
+                        MVP build · Laravel + React
+                    </div>
+                </aside>
+
+                <div className="main-area">
+                    <header className="topbar">
+                        <div>
+                            <h1 className="topbar-title">Dashboard</h1>
+                            <p className="page-subtitle">
+                                Manage your client work from one workspace.
                             </p>
                         </div>
 
-                        <div
-                            style={{
-                                border: '1px solid #ddd',
-                                borderRadius: '0.75rem',
-                                padding: '1rem',
-                            }}
-                        >
-                            <strong>Active projects</strong>
-                            <p style={{ fontSize: '2rem', margin: 0 }}>
-                                {dashboardSummary.active_projects}
-                            </p>
-                        </div>
+                        <div className="topbar-user">
+            <span>
+              Signed in as <strong>{user.name}</strong>
+            </span>
 
-                        <div
-                            style={{
-                                border: '1px solid #ddd',
-                                borderRadius: '0.75rem',
-                                padding: '1rem',
-                            }}
-                        >
-                            <strong>Open tasks</strong>
-                            <p style={{ fontSize: '2rem', margin: 0 }}>
-                                {dashboardSummary.open_tasks}
-                            </p>
-                        </div>
-
-                        <div
-                            style={{
-                                border: '1px solid #ddd',
-                                borderRadius: '0.75rem',
-                                padding: '1rem',
-                            }}
-                        >
-                            <strong>Overdue tasks</strong>
-                            <p style={{ fontSize: '2rem', margin: 0 }}>
-                                {dashboardSummary.overdue_tasks}
-                            </p>
-                        </div>
-                    </section>
-                )}
-
-                {dashboardSummary?.overdue_tasks ? (
-                  <p style={{ color: 'darkred' }}>
-                      You have {dashboardSummary.overdue_tasks} overdue task
-                      {dashboardSummary.overdue_tasks === 1 ? '' : 's'}.
-                  </p>
-                ) : null}
-
-                <section
-                    style={{
-                        border: '1px solid #ddd',
-                        borderRadius: '0.75rem',
-                        padding: '1rem',
-                        maxWidth: '40rem',
-                    }}
-                >
-                    <h2>Dashboard</h2>
-                    {organisation && (
-                        <p>
-                            Current organisation: <strong>{organisation.name}</strong>
-                        </p>
-                    )}
-                    <p>This is a protected area. Auth is working.</p>
-                </section>
-
-                <section
-                    style={{
-                        border: '1px solid #ddd',
-                        borderRadius: '0.75rem',
-                        padding: '1rem',
-                        maxWidth: '40rem',
-                        marginTop: '1rem',
-                    }}
-                >
-                    <h2>Clients</h2>
-
-                    <form
-                        onSubmit={handleCreateClient}
-                        style={{
-                            display: 'grid',
-                            gap: '0.75rem',
-                            marginBottom: '1rem',
-                        }}
-                    >
-                        <label>
-                            Client name
-                            <input
-                                value={clientName}
-                                onChange={(event) => setClientName(event.target.value)}
-                                style={{ display: 'block', width: '100%' }}
-                                required
-                            />
-                        </label>
-
-                        <label>
-                            Contact name
-                            <input
-                                value={clientContactName}
-                                onChange={(event) => setClientContactName(event.target.value)}
-                                style={{ display: 'block', width: '100%' }}
-                            />
-                        </label>
-
-                        <label>
-                            Contact email
-                            <input
-                                type="email"
-                                value={clientContactEmail}
-                                onChange={(event) => setClientContactEmail(event.target.value)}
-                                style={{ display: 'block', width: '100%' }}
-                            />
-                        </label>
-
-                        {clientError && <p style={{ color: 'red' }}>{clientError}</p>}
-
-                        <button type="submit">
-                            Add client
-                        </button>
-                    </form>
-
-                    {clients.length === 0 ? (
-                        <p>No clients yet.</p>
-                    ) : (
-                        <ul>
-                            {clients.map((client) => (
-                                <li key={client.id}>
-                                    <strong>{client.name}</strong>
-                                    {client.contact_email && <> — {client.contact_email}</>}
-                                    {' '}
-                                    <span>({client.status})</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </section>
-
-                <section
-                    style={{
-                        border: '1px solid #ddd',
-                        borderRadius: '0.75rem',
-                        padding: '1rem',
-                        maxWidth: '40rem',
-                        marginTop: '1rem',
-                    }}
-                >
-                    <h2>Projects</h2>
-
-                    {clients.length === 0 ? (
-                        <p>Create a client before adding projects.</p>
-                    ) : (
-                        <form
-                            onSubmit={handleCreateProject}
-                            style={{
-                                display: 'grid',
-                                gap: '0.75rem',
-                                marginBottom: '1rem',
-                            }}
-                        >
-                            <label>
-                                Client
-                                <select
-                                    value={projectClientId}
-                                    onChange={(event) => setProjectClientId(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                    required
-                                >
-                                    <option value="">Select a client</option>
-
-                                    {clients.map((client) => (
-                                        <option key={client.id} value={client.id}>
-                                            {client.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-
-                            <label>
-                                Project name
-                                <input
-                                    value={projectName}
-                                    onChange={(event) => setProjectName(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                    required
-                                />
-                            </label>
-
-                            <label>
-                                Description
-                                <textarea
-                                    value={projectDescription}
-                                    onChange={(event) => setProjectDescription(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                />
-                            </label>
-
-                            <label>
-                                Due date
-                                <input
-                                    type="date"
-                                    value={projectDueDate}
-                                    onChange={(event) => setProjectDueDate(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                />
-                            </label>
-
-                            {projectError && <p style={{ color: 'red' }}>{projectError}</p>}
-
-                            <button type="submit">
-                                Add project
+                            <button type="button" className="button ghost" onClick={handleLogout}>
+                                Logout
                             </button>
-                        </form>
-                    )}
+                        </div>
+                    </header>
 
-                    {projects.length === 0 ? (
-                        <p>No projects yet.</p>
-                    ) : (
-                        <ul>
-                            {projects.map((project) => (
-                                <li key={project.id}>
-                                    <strong>{project.name}</strong>
-                                    {project.client && <> — {project.client.name}</>}
-                                    {' '}
-                                    <span>({project.status})</span>
-                                    {project.due_date && <> — due {project.due_date.slice(0, 10)}</>}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </section>
+                    <main className="page" id="dashboard">
+                        <section className="page-header">
+                            <h2 className="page-title">Workspace overview</h2>
+                            <p className="page-subtitle">
+                                {organisation
+                                    ? `Current organisation: ${organisation.name}`
+                                    : 'No organisation loaded'}
+                            </p>
+                        </section>
 
-                <section
-                    style={{
-                        border: '1px solid #ddd',
-                        borderRadius: '0.75rem',
-                        padding: '1rem',
-                        maxWidth: '40rem',
-                        marginTop: '1rem',
-                    }}
-                >
-                    <h2>Tasks</h2>
+                        {dashboardSummary && (
+                            <section className="metrics-grid">
+                                <div className="metric-card">
+                                    <div className="metric-label">Total clients</div>
+                                    <p className="metric-value">{dashboardSummary.total_clients}</p>
+                                </div>
 
-                    {projects.length === 0 ? (
-                        <p>Create a project before adding tasks.</p>
-                    ) : (
-                        <form
-                            onSubmit={handleCreateTask}
-                            style={{
-                                display: 'grid',
-                                gap: '0.75rem',
-                                marginBottom: '1rem',
-                            }}
-                        >
-                            <label>
-                                Project
-                                <select
-                                    value={taskProjectId}
-                                    onChange={(event) => setTaskProjectId(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                    required
-                                >
-                                    <option value="">Select a project</option>
+                                <div className="metric-card">
+                                    <div className="metric-label">Active projects</div>
+                                    <p className="metric-value">{dashboardSummary.active_projects}</p>
+                                </div>
 
-                                    {projects.map((project) => (
-                                        <option key={project.id} value={project.id}>
-                                            {project.name}
-                                            {project.client ? ` — ${project.client.name}` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                <div className="metric-card">
+                                    <div className="metric-label">Open tasks</div>
+                                    <p className="metric-value">{dashboardSummary.open_tasks}</p>
+                                </div>
 
-                            <label>
-                                Task title
-                                <input
-                                    value={taskTitle}
-                                    onChange={(event) => setTaskTitle(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                    required
-                                />
-                            </label>
+                                <div className="metric-card">
+                                    <div className="metric-label">Overdue tasks</div>
+                                    <p className="metric-value">{dashboardSummary.overdue_tasks}</p>
+                                </div>
+                            </section>
+                        )}
 
-                            <label>
-                                Description
-                                <textarea
-                                    value={taskDescription}
-                                    onChange={(event) => setTaskDescription(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                />
-                            </label>
+                        {dashboardSummary?.overdue_tasks ? (
+                            <p className="error-message">
+                                You have {dashboardSummary.overdue_tasks} overdue task
+                                {dashboardSummary.overdue_tasks === 1 ? '' : 's'}.
+                            </p>
+                        ) : null}
 
-                            <label>
-                                Priority
-                                <select
-                                    value={taskPriority}
-                                    onChange={(event) =>
-                                        setTaskPriority(event.target.value as 'low' | 'medium' | 'high')
-                                    }
-                                    style={{ display: 'block', width: '100%' }}
-                                >
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            </label>
+                        <section className="content-grid">
+                            {
+                                <section className="card" id="clients">
+                                    <div className="card-header">
+                                        <div>
+                                            <h3 className="card-title">Clients</h3>
+                                            <p className="card-description">
+                                                Add the companies or people you manage work for.
+                                            </p>
+                                        </div>
 
-                            <label>
-                                Due date
-                                <input
-                                    type="date"
-                                    value={taskDueDate}
-                                    onChange={(event) => setTaskDueDate(event.target.value)}
-                                    style={{ display: 'block', width: '100%' }}
-                                />
-                            </label>
+                                        <span className="badge">{clients.length}</span>
+                                    </div>
 
-                            {taskError && <p style={{ color: 'red' }}>{taskError}</p>}
+                                    <form onSubmit={handleCreateClient} className="form-grid">
+                                        <div className="form-row">
+                                            <label htmlFor="client-name">Client name</label>
+                                            <input
+                                                id="client-name"
+                                                className="input"
+                                                value={clientName}
+                                                onChange={(event) => setClientName(event.target.value)}
+                                                required
+                                            />
+                                        </div>
 
-                            <button type="submit">
-                                Add task
-                            </button>
-                        </form>
-                    )}
+                                        <div className="form-row">
+                                            <label htmlFor="client-contact-name">Contact name</label>
+                                            <input
+                                                id="client-contact-name"
+                                                className="input"
+                                                value={clientContactName}
+                                                onChange={(event) => setClientContactName(event.target.value)}
+                                            />
+                                        </div>
 
-                    {tasks.length === 0 ? (
-                        <p>No tasks yet.</p>
-                    ) : (
-                        <ul>
-                            {tasks.map((task) => (
-                                <li key={task.id}>
-                                    <strong>{task.title}</strong>
-                                    {task.project && <> — {task.project.name}</>}
-                                    {task.project?.client && <> / {task.project.client.name}</>}
-                                    {' '}
-                                    <span>({task.status}, {task.priority})</span>
-                                    {task.due_date && <> — due {task.due_date.slice(0, 10)}</>}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </section>
+                                        <div className="form-row">
+                                            <label htmlFor="client-contact-email">Contact email</label>
+                                            <input
+                                                id="client-contact-email"
+                                                className="input"
+                                                type="email"
+                                                value={clientContactEmail}
+                                                onChange={(event) => setClientContactEmail(event.target.value)}
+                                            />
+                                        </div>
 
-                <button
-                    type="button"
-                    onClick={handleLogout}
-                    style={{ marginTop: '1rem' }}
-                >
-                    Logout
-                </button>
-            </main>
+                                        {clientError && <p className="error-message">{clientError}</p>}
+
+                                        <button type="submit" className="button">
+                                            Add client
+                                        </button>
+                                    </form>
+
+                                    <hr />
+
+                                    {clients.length === 0 ? (
+                                        <p className="empty-state">No clients yet.</p>
+                                    ) : (
+                                        <ul className="list">
+                                            {clients.map((client) => (
+                                                <li key={client.id} className="list-item">
+                                                    <div className="list-item-title">{client.name}</div>
+                                                    <div className="list-item-meta">
+                                                        {client.contact_email || 'No contact email'} · {client.status}
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </section>
+                            }
+                            {<section className="card" id="projects">
+                                <div className="card-header">
+                                    <div>
+                                        <h3 className="card-title">Projects</h3>
+                                        <p className="card-description">
+                                            Track active client work and due dates.
+                                        </p>
+                                    </div>
+
+                                    <span className="badge">{projects.length}</span>
+                                </div>
+
+                                {clients.length === 0 ? (
+                                    <p className="empty-state">Create a client before adding projects.</p>
+                                ) : (
+                                    <form onSubmit={handleCreateProject} className="form-grid">
+                                        <div className="form-row">
+                                            <label htmlFor="project-client">Client</label>
+                                            <select
+                                                id="project-client"
+                                                className="select"
+                                                value={projectClientId}
+                                                onChange={(event) => setProjectClientId(event.target.value)}
+                                                required
+                                            >
+                                                <option value="">Select a client</option>
+
+                                                {clients.map((client) => (
+                                                    <option key={client.id} value={client.id}>
+                                                        {client.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="project-name">Project name</label>
+                                            <input
+                                                id="project-name"
+                                                className="input"
+                                                value={projectName}
+                                                onChange={(event) => setProjectName(event.target.value)}
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="project-description">Description</label>
+                                            <textarea
+                                                id="project-description"
+                                                className="textarea"
+                                                value={projectDescription}
+                                                onChange={(event) => setProjectDescription(event.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="project-due-date">Due date</label>
+                                            <input
+                                                id="project-due-date"
+                                                className="input"
+                                                type="date"
+                                                value={projectDueDate}
+                                                onChange={(event) => setProjectDueDate(event.target.value)}
+                                            />
+                                        </div>
+
+                                        {projectError && <p className="error-message">{projectError}</p>}
+
+                                        <button type="submit" className="button">
+                                            Add project
+                                        </button>
+                                    </form>
+                                )}
+
+                                <hr />
+
+                                {projects.length === 0 ? (
+                                    <p className="empty-state">No projects yet.</p>
+                                ) : (
+                                    <ul className="list">
+                                        {projects.map((project) => (
+                                            <li key={project.id} className="list-item">
+                                                <div className="list-item-title">{project.name}</div>
+                                                <div className="list-item-meta">
+                                                    {project.client?.name ?? 'No client'} · {project.status}
+                                                    {project.due_date ? ` · due ${project.due_date.slice(0, 10)}` : ''}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </section>}
+                            {<section className="card" id="tasks">
+                                <div className="card-header">
+                                    <div>
+                                        <h3 className="card-title">Tasks</h3>
+                                        <p className="card-description">
+                                            Break projects into actionable work items.
+                                        </p>
+                                    </div>
+
+                                    <span className="badge">{tasks.length}</span>
+                                </div>
+
+                                {projects.length === 0 ? (
+                                    <p className="empty-state">Create a project before adding tasks.</p>
+                                ) : (
+                                    <form onSubmit={handleCreateTask} className="form-grid">
+                                        <div className="form-row">
+                                            <label htmlFor="task-project">Project</label>
+                                            <select
+                                                id="task-project"
+                                                className="select"
+                                                value={taskProjectId}
+                                                onChange={(event) => setTaskProjectId(event.target.value)}
+                                                required
+                                            >
+                                                <option value="">Select a project</option>
+
+                                                {projects.map((project) => (
+                                                    <option key={project.id} value={project.id}>
+                                                        {project.name}
+                                                        {project.client ? ` — ${project.client.name}` : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="task-title">Task title</label>
+                                            <input
+                                                id="task-title"
+                                                className="input"
+                                                value={taskTitle}
+                                                onChange={(event) => setTaskTitle(event.target.value)}
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="task-description">Description</label>
+                                            <textarea
+                                                id="task-description"
+                                                className="textarea"
+                                                value={taskDescription}
+                                                onChange={(event) => setTaskDescription(event.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="task-priority">Priority</label>
+                                            <select
+                                                id="task-priority"
+                                                className="select"
+                                                value={taskPriority}
+                                                onChange={(event) =>
+                                                    setTaskPriority(event.target.value as 'low' | 'medium' | 'high')
+                                                }
+                                            >
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="form-row">
+                                            <label htmlFor="task-due-date">Due date</label>
+                                            <input
+                                                id="task-due-date"
+                                                className="input"
+                                                type="date"
+                                                value={taskDueDate}
+                                                onChange={(event) => setTaskDueDate(event.target.value)}
+                                            />
+                                        </div>
+
+                                        {taskError && <p className="error-message">{taskError}</p>}
+
+                                        <button type="submit" className="button">
+                                            Add task
+                                        </button>
+                                    </form>
+                                )}
+
+                                <hr />
+
+                                {tasks.length === 0 ? (
+                                    <p className="empty-state">No tasks yet.</p>
+                                ) : (
+                                    <ul className="list">
+                                        {tasks.map((task) => (
+                                            <li key={task.id} className="list-item">
+                                                <div className="list-item-title">{task.title}</div>
+                                                <div className="list-item-meta">
+                                                    {task.project?.name ?? 'No project'}
+                                                    {task.project?.client ? ` / ${task.project.client.name}` : ''}
+                                                </div>
+
+                                                <div>
+                                                    <span className="badge">{task.status}</span>{' '}
+                                                    <span
+                                                        className={
+                                                            task.priority === 'high'
+                                                                ? 'badge danger'
+                                                                : task.priority === 'medium'
+                                                                    ? 'badge warning'
+                                                                    : 'badge'
+                                                        }
+                                                    >
+                                                        {task.priority}
+                                                    </span>
+                                                </div>
+
+                                                {task.due_date && (
+                                                    <div className="list-item-meta">
+                                                        Due {task.due_date.slice(0, 10)}
+                                                    </div>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </section>}
+                        </section>
+                    </main>
+                </div>
+            </div>
         );
     }
 
     return (
-        <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-            <h1>Client Project Portal</h1>
+        <main className="auth-page">
+            <section className="auth-card">
+                <h1 className="auth-title">Client Project Portal</h1>
+                <p className="auth-subtitle">
+                    Sign in to manage clients, projects, and tasks.
+                </p>
 
-            <div style={{ marginBottom: '1rem' }}>
-                <button
-                    type="button"
-                    onClick={() => setMode('register')}
-                    disabled={mode === 'register'}
-                >
-                    Register
-                </button>
+                <div className="auth-tabs">
+                    <button
+                        type="button"
+                        className={mode === 'register' ? 'button' : 'button secondary'}
+                        onClick={() => setMode('register')}
+                        disabled={mode === 'register'}
+                    >
+                        Register
+                    </button>
 
-                <button
-                    type="button"
-                    onClick={() => setMode('login')}
-                    disabled={mode === 'login'}
-                    style={{ marginLeft: '0.5rem' }}
-                >
-                    Login
-                </button>
-            </div>
+                    <button
+                        type="button"
+                        className={mode === 'login' ? 'button' : 'button secondary'}
+                        onClick={() => setMode('login')}
+                        disabled={mode === 'login'}
+                    >
+                        Login
+                    </button>
+                </div>
 
-            <form
-                onSubmit={handleSubmit}
-                style={{
-                    display: 'grid',
-                    gap: '0.75rem',
-                    maxWidth: '24rem',
-                }}
-            >
-                {mode === 'register' && (
-                    <label>
-                        Name
+                <form onSubmit={handleSubmit} className="form-grid">
+                    {mode === 'register' && (
+                        <div className="form-row">
+                            <label htmlFor="name">Name</label>
+                            <input
+                                id="name"
+                                className="input"
+                                value={name}
+                                onChange={(event) => setName(event.target.value)}
+                            />
+                        </div>
+                    )}
+
+                    <div className="form-row">
+                        <label htmlFor="email">Email</label>
                         <input
-                            value={name}
-                            onChange={(event) => setName(event.target.value)}
-                            style={{ display: 'block', width: '100%' }}
+                            id="email"
+                            className="input"
+                            type="email"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
                         />
-                    </label>
-                )}
+                    </div>
 
-                <label>
-                    Email
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        style={{ display: 'block', width: '100%' }}
-                    />
-                </label>
+                    <div className="form-row">
+                        <label htmlFor="password">Password</label>
+                        <input
+                            id="password"
+                            className="input"
+                            type="password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                        />
+                    </div>
 
-                <label>
-                    Password
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        style={{ display: 'block', width: '100%' }}
-                    />
-                </label>
+                    {error && <p className="error-message">{error}</p>}
 
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-
-                <button type="submit" disabled={loading}>
-                    {loading
-                        ? 'Please wait...'
-                        : mode === 'register'
-                            ? 'Create account'
-                            : 'Login'}
-                </button>
-            </form>
+                    <button type="submit" className="button" disabled={loading}>
+                        {loading
+                            ? 'Please wait...'
+                            : mode === 'register'
+                                ? 'Create account'
+                                : 'Login'}
+                    </button>
+                </form>
+            </section>
         </main>
     );
 }
