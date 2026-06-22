@@ -33,7 +33,7 @@ jobs:
 
     env:
       APP_ENV: testing
-      APP_KEY: base64:Q3VycmVudGx5RmFrZUFwcEtleUZvckdpdEh1YkFjdGlvbnM=
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       APP_DEBUG: true
       DB_CONNECTION: pgsql
       DB_HOST: 127.0.0.1
