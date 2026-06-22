@@ -1,31 +1,31 @@
-import './App.css';
+import "../App.css";
 
 import { useEffect, useState } from 'react'; //runtime value
 import type { FormEvent } from 'react'; //TypeScript-only type
-import { getCurrentOrganisation } from './features/organisations/organisationApi';
-import { createClient, getClients } from './features/clients/clientApi';
-import { createProject, getProjects } from './features/projects/projectApi';
-import { createTask, getTasks } from './features/tasks/taskApi.ts';
-import { getDashboard } from "./features/dashboard/dashboardApi.ts";
+import { getCurrentOrganisation } from '../features/organisations/organisationApi';
+import { createClient, getClients } from '../features/clients/clientApi';
+import { createProject, getProjects } from '../features/projects/projectApi';
+import { createTask, getTasks } from '../features/tasks/taskApi';
+import { getDashboard } from "../features/dashboard/dashboardApi";
 import {
     getMe,
     login,
     logout,
     register,
-} from './features/auth/authApi';
+} from '../features/auth/authApi';
 import {
     addTeamMember,
     getTeam,
     removeTeamMember,
     updateTeamMemberRole,
-} from "./features/team/teamApi.ts";
+} from "../features/team/teamApi.ts";
 
-import type { User, Organisation } from './features/auth/types';
-import type { Client } from './features/clients/types';
-import type { Project } from './features/projects/types';
-import type { Task } from './features/tasks/types'
-import type { DashboardSummary } from "./features/dashboard/types.ts";
-import type { TeamMember, TeamRole } from "./features/team/types.ts";
+import type { User, Organisation } from '../features/auth/types';
+import type { Client } from '../features/clients/types';
+import type { Project } from '../features/projects/types';
+import type { Task } from '../features/tasks/types'
+import type { DashboardSummary } from "../features/dashboard/types";
+import type { TeamMember, TeamRole } from "../features/team/types";
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
