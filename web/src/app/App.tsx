@@ -1,6 +1,11 @@
 import "../App.css";
 
 import { AppLayout } from '../components/layout/AppLayout';
+import { DashboardPage } from "../pages/DashboardPage";
+import { ClientsPage } from "../pages/ClientsPage";
+import { ProjectsPage } from "../pages/ProjectsPage";
+import { TasksPage } from "../pages/TasksPage";
+import { TeamPage } from "../pages/TeamPage";
 
 import { useEffect, useState } from 'react'; //runtime value
 import type { FormEvent } from 'react'; //TypeScript-only type
@@ -55,14 +60,14 @@ function App() {
     const [clientName, setClientName] = useState('');
     const [clientContactName, setClientContactName] = useState('');
     const [clientContactEmail, setClientContactEmail] = useState('');
-    const [clientError, setClientError] = useState<String | null>(null);
+    const [clientError, setClientError] = useState<string | null>(null);
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [projectClientId, setProjectClientId] = useState('');
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
     const [projectDueDate, setProjectDueDate] = useState('');
-    const [projectError, setProjectError] = useState<String | null>(null);
+    const [projectError, setProjectError] = useState<string | null>(null);
 
     const [tasks, setTasks] = useState<Task[]>([]);
     const [taskProjectId, setTaskProjectId] = useState('');
@@ -360,450 +365,80 @@ function App() {
                 organisationName={organisation?.name}
                 role={currentRole}
                 onLogout={handleLogout}
-            >{
+            >
+                {currentView == 'dashboard' && (
+                    <DashboardPage
+                        dashboard={dashboardSummary}
+                        organisation={organisation}
+                    />
+                )}
 
-                    <main className="page" id="dashboard">
-                        <section className="page-header">
-                            <h2 className="page-title">Workspace overview</h2>
-                            <p className="page-subtitle">
-                                {organisation
-                                    ? `Current organisation: ${organisation.name}`
-                                    : 'No organisation loaded'}
-                            </p>
-                        </section>
+                {currentView == 'clients' && (
+                    <ClientsPage
+                        clients={clients}
+                        clientName={clientName}
+                        clientContactName={clientContactName}
+                        clientContactEmail={clientContactEmail}
+                        clientError={clientError}
+                        onClientNameChange={setClientName}
+                        onClientContactNameChange={setClientContactName}
+                        onClientContactEmailChange={setClientContactEmail}
+                        onCreateClient={handleCreateClient}
+                    />
+                )}
 
-                        {dashboardSummary && (
-                            <section className="metrics-grid">
-                                <div className="metric-card">
-                                    <div className="metric-label">Total clients</div>
-                                    <p className="metric-value">{dashboardSummary.total_clients}</p>
-                                </div>
+                {currentView == 'projects' && (
+                    <ProjectsPage
+                        projects={projects}
+                        clients={clients}
+                        projectClientId={projectClientId}
+                        projectName={projectName}
+                        projectDescription={projectDescription}
+                        projectDueDate={projectDueDate}
+                        projectError={projectError}
+                        onProjectClientIdChange={setProjectClientId}
+                        onProjectNameChange={setProjectName}
+                        onProjectDescriptionChange={setProjectDescription}
+                        onProjectDueDateChange={setProjectDueDate}
+                        onCreateProject={handleCreateProject}
+                    />
+                )}
 
-                                <div className="metric-card">
-                                    <div className="metric-label">Active projects</div>
-                                    <p className="metric-value">{dashboardSummary.active_projects}</p>
-                                </div>
+                {currentView == 'tasks' && (
+                    <TasksPage
+                        tasks={tasks}
+                        projects={projects}
+                        taskProjectId={taskProjectId}
+                        taskTitle={taskTitle}
+                        taskDescription={taskDescription}
+                        taskPriority={taskPriority}
+                        taskDueDate={taskDueDate}
+                        taskError={taskError}
+                        onTaskProjectIdChange={setTaskProjectId}
+                        onTaskTitleChange={setTaskTitle}
+                        onTaskDescriptionChange={setTaskDescription}
+                        onTaskPriorityChange={setTaskPriority}
+                        onTaskDueDateChange={setTaskDueDate}
+                        onCreateTask={handleCreateTask}
+                    />
+                )}
 
-                                <div className="metric-card">
-                                    <div className="metric-label">Open tasks</div>
-                                    <p className="metric-value">{dashboardSummary.open_tasks}</p>
-                                </div>
+                {currentView == 'team' && canManageTeam && (
+                    <TeamPage
+                        teamMembers={teamMembers}
+                        currentUser={user}
+                        teamEmail={teamEmail}
+                        teamRole={teamRole}
+                        teamError={teamError}
+                        canChangeRoles={canChangeRoles}
+                        onTeamEmailChange={setTeamEmail}
+                        onTeamRoleChange={setTeamRole}
+                        onAddTeamMember={handleAddTeamMember}
+                        onChangeTeamRole={handleChangeTeamRole}
+                        onRemoveTeamMember={handleRemoveTeamMember}
+                    />
+                )}
 
-                                <div className="metric-card">
-                                    <div className="metric-label">Overdue tasks</div>
-                                    <p className="metric-value">{dashboardSummary.overdue_tasks}</p>
-                                </div>
-                            </section>
-                        )}
-
-                        {dashboardSummary?.overdue_tasks ? (
-                            <p className="error-message">
-                                You have {dashboardSummary.overdue_tasks} overdue task
-                                {dashboardSummary.overdue_tasks === 1 ? '' : 's'}.
-                            </p>
-                        ) : null}
-
-                        <section className="content-grid">
-                            <section className="card" id="clients">
-                                <div className="card-header">
-                                    <div>
-                                        <h3 className="card-title">Clients</h3>
-                                        <p className="card-description">
-                                            Add the companies or people you manage work for.
-                                        </p>
-                                    </div>
-
-                                    <span className="badge">{clients.length}</span>
-                                </div>
-
-                                <form onSubmit={handleCreateClient} className="form-grid">
-                                    <div className="form-row">
-                                        <label htmlFor="client-name">Client name</label>
-                                        <input
-                                            id="client-name"
-                                            className="input"
-                                            value={clientName}
-                                            onChange={(event) => setClientName(event.target.value)}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-row">
-                                        <label htmlFor="client-contact-name">Contact name</label>
-                                        <input
-                                            id="client-contact-name"
-                                            className="input"
-                                            value={clientContactName}
-                                            onChange={(event) => setClientContactName(event.target.value)}
-                                        />
-                                    </div>
-
-                                    <div className="form-row">
-                                        <label htmlFor="client-contact-email">Contact email</label>
-                                        <input
-                                            id="client-contact-email"
-                                            className="input"
-                                            type="email"
-                                            value={clientContactEmail}
-                                            onChange={(event) => setClientContactEmail(event.target.value)}
-                                        />
-                                    </div>
-
-                                    {clientError && <p className="error-message">{clientError}</p>}
-
-                                    <button type="submit" className="button">
-                                        Add client
-                                    </button>
-                                </form>
-
-                                <hr />
-
-                                {clients.length === 0 ? (
-                                    <p className="empty-state">No clients yet.</p>
-                                ) : (
-                                    <ul className="list">
-                                        {clients.map((client) => (
-                                            <li key={client.id} className="list-item">
-                                                <div className="list-item-title">{client.name}</div>
-                                                <div className="list-item-meta">
-                                                    {client.contact_email || 'No contact email'} · {client.status}
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </section>
-                            <section className="card" id="projects">
-                                <div className="card-header">
-                                    <div>
-                                        <h3 className="card-title">Projects</h3>
-                                        <p className="card-description">
-                                            Track active client work and due dates.
-                                        </p>
-                                    </div>
-
-                                    <span className="badge">{projects.length}</span>
-                                </div>
-
-                                {clients.length === 0 ? (
-                                    <p className="empty-state">Create a client before adding projects.</p>
-                                ) : (
-                                    <form onSubmit={handleCreateProject} className="form-grid">
-                                        <div className="form-row">
-                                            <label htmlFor="project-client">Client</label>
-                                            <select
-                                                id="project-client"
-                                                className="select"
-                                                value={projectClientId}
-                                                onChange={(event) => setProjectClientId(event.target.value)}
-                                                required
-                                            >
-                                                <option value="">Select a client</option>
-
-                                                {clients.map((client) => (
-                                                    <option key={client.id} value={client.id}>
-                                                        {client.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="project-name">Project name</label>
-                                            <input
-                                                id="project-name"
-                                                className="input"
-                                                value={projectName}
-                                                onChange={(event) => setProjectName(event.target.value)}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="project-description">Description</label>
-                                            <textarea
-                                                id="project-description"
-                                                className="textarea"
-                                                value={projectDescription}
-                                                onChange={(event) => setProjectDescription(event.target.value)}
-                                            />
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="project-due-date">Due date</label>
-                                            <input
-                                                id="project-due-date"
-                                                className="input"
-                                                type="date"
-                                                value={projectDueDate}
-                                                onChange={(event) => setProjectDueDate(event.target.value)}
-                                            />
-                                        </div>
-
-                                        {projectError && <p className="error-message">{projectError}</p>}
-
-                                        <button type="submit" className="button">
-                                            Add project
-                                        </button>
-                                    </form>
-                                )}
-
-                                <hr />
-
-                                {projects.length === 0 ? (
-                                    <p className="empty-state">No projects yet.</p>
-                                ) : (
-                                    <ul className="list">
-                                        {projects.map((project) => (
-                                            <li key={project.id} className="list-item">
-                                                <div className="list-item-title">{project.name}</div>
-                                                <div className="list-item-meta">
-                                                    {project.client?.name ?? 'No client'} · {project.status}
-                                                    {project.due_date ? ` · due ${project.due_date.slice(0, 10)}` : ''}
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </section>
-                            <section className="card" id="tasks">
-                                <div className="card-header">
-                                    <div>
-                                        <h3 className="card-title">Tasks</h3>
-                                        <p className="card-description">
-                                            Break projects into actionable work items.
-                                        </p>
-                                    </div>
-
-                                    <span className="badge">{tasks.length}</span>
-                                </div>
-
-                                {projects.length === 0 ? (
-                                    <p className="empty-state">Create a project before adding tasks.</p>
-                                ) : (
-                                    <form onSubmit={handleCreateTask} className="form-grid">
-                                        <div className="form-row">
-                                            <label htmlFor="task-project">Project</label>
-                                            <select
-                                                id="task-project"
-                                                className="select"
-                                                value={taskProjectId}
-                                                onChange={(event) => setTaskProjectId(event.target.value)}
-                                                required
-                                            >
-                                                <option value="">Select a project</option>
-
-                                                {projects.map((project) => (
-                                                    <option key={project.id} value={project.id}>
-                                                        {project.name}
-                                                        {project.client ? ` — ${project.client.name}` : ''}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="task-title">Task title</label>
-                                            <input
-                                                id="task-title"
-                                                className="input"
-                                                value={taskTitle}
-                                                onChange={(event) => setTaskTitle(event.target.value)}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="task-description">Description</label>
-                                            <textarea
-                                                id="task-description"
-                                                className="textarea"
-                                                value={taskDescription}
-                                                onChange={(event) => setTaskDescription(event.target.value)}
-                                            />
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="task-priority">Priority</label>
-                                            <select
-                                                id="task-priority"
-                                                className="select"
-                                                value={taskPriority}
-                                                onChange={(event) =>
-                                                    setTaskPriority(event.target.value as 'low' | 'medium' | 'high')
-                                                }
-                                            >
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="task-due-date">Due date</label>
-                                            <input
-                                                id="task-due-date"
-                                                className="input"
-                                                type="date"
-                                                value={taskDueDate}
-                                                onChange={(event) => setTaskDueDate(event.target.value)}
-                                            />
-                                        </div>
-
-                                        {taskError && <p className="error-message">{taskError}</p>}
-
-                                        <button type="submit" className="button">
-                                            Add task
-                                        </button>
-                                    </form>
-                                )}
-
-                                <hr />
-
-                                {tasks.length === 0 ? (
-                                    <p className="empty-state">No tasks yet.</p>
-                                ) : (
-                                    <ul className="list">
-                                        {tasks.map((task) => (
-                                            <li key={task.id} className="list-item">
-                                                <div className="list-item-title">{task.title}</div>
-                                                <div className="list-item-meta">
-                                                    {task.project?.name ?? 'No project'}
-                                                    {task.project?.client ? ` / ${task.project.client.name}` : ''}
-                                                </div>
-
-                                                <div>
-                                                    <span className="badge">{task.status}</span>{' '}
-                                                    <span
-                                                        className={
-                                                            task.priority === 'high'
-                                                                ? 'badge danger'
-                                                                : task.priority === 'medium'
-                                                                    ? 'badge warning'
-                                                                    : 'badge'
-                                                        }
-                                                    >
-                                                        {task.priority}
-                                                    </span>
-                                                </div>
-
-                                                {task.due_date && (
-                                                    <div className="list-item-meta">
-                                                        Due {task.due_date.slice(0, 10)}
-                                                    </div>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </section>
-                            <section className="card" id="team">
-                                <div className="card-header">
-                                    <div>
-                                        <h3 className="card-title">Team</h3>
-                                        <p className="card-description">
-                                            Manage organisation members and access levels.
-                                        </p>
-                                    </div>
-
-                                    <span className="badge">{teamMembers.length}</span>
-                                </div>
-
-                                <p className="list-item-meta">
-                                    Your role: <strong>{currentRole ?? 'unknown'}</strong>
-                                </p>
-
-                                {canManageTeam ? (
-                                    <form onSubmit={handleAddTeamMember} className="form-grid">
-                                        <div className="form-row">
-                                            <label htmlFor="team-email">User email</label>
-                                            <input
-                                                id="team-email"
-                                                className="input"
-                                                type="email"
-                                                value={teamEmail}
-                                                onChange={(event) => setTeamEmail(event.target.value)}
-                                                placeholder="existing.user@example.com"
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-row">
-                                            <label htmlFor="team-role">Role</label>
-                                            <select
-                                                id="team-role"
-                                                className="select"
-                                                value={teamRole}
-                                                onChange={(event) =>
-                                                    setTeamRole(event.target.value as Exclude<TeamRole, 'owner'>)
-                                                }
-                                            >
-                                                <option value="member">Member</option>
-                                                <option value="admin">Admin</option>
-                                            </select>
-                                        </div>
-
-                                        {teamError && <p className="error-message">{teamError}</p>}
-
-                                        <button type="submit" className="button">
-                                            Add team member
-                                        </button>
-                                    </form>
-                                ) : (
-                                    <p className="empty-state">
-                                        You do not have permission to manage team members.
-                                    </p>
-                                )}
-
-                                <hr />
-
-                                {teamMembers.length === 0 ? (
-                                    <p className="empty-state">No team members yet.</p>
-                                ) : (
-                                    <ul className="list">
-                                        {teamMembers.map((member) => (
-                                            <li key={member.id} className="list-item">
-                                                <div className="list-item-title">{member.name}</div>
-                                                <div className="list-item-meta">{member.email}</div>
-
-                                                <div>
-                                                    <span className="badge">{member.role}</span>
-                                                </div>
-
-                                                {canManageTeam && member.role !== 'owner' && member.id !== user.id && (
-                                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                                        {canChangeRoles && (
-                                                            <select
-                                                                className="select"
-                                                                value={member.role}
-                                                                onChange={(event) =>
-                                                                    handleChangeTeamRole(
-                                                                        member,
-                                                                        event.target.value as Exclude<TeamRole, 'owner'>,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <option value="member">Member</option>
-                                                                <option value="admin">Admin</option>
-                                                            </select>
-                                                        )}
-
-                                                        <button
-                                                            type="button"
-                                                            className="button ghost"
-                                                            onClick={() => handleRemoveTeamMember(member)}
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </section>
-                        </section>
-                    </main>}
             </AppLayout>
         );
     }
