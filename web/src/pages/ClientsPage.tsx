@@ -87,6 +87,7 @@ export function ClientsPage ({
                         <li key={client.id} className="list-item">
                             <div className="list-item-title">{client.name}</div>
                             <div className="list-item-meta">
+                                {client.contact_name || 'No contact name'} ·{' '}
                                 {client.contact_email || 'No contact email'} · {client.status}
                             </div>
                         </li>
