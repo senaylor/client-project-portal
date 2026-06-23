@@ -8,82 +8,74 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\UpdateClientRequest;
+use App\Http\Resources\ClientResource;
+
 class ClientController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $organisation = $request->user()->currentOrganisation();
 
         $clients = Client::query()
-                         ->where('organisation_id', $organisation?->id)
+                         ->where('organisation_id', $organisation->id)
                          ->latest()
                          ->get();
 
         return response()->json([
-                                    'clients' => $clients,
+                                    'clients' => ClientResource::collection($clients),
                                 ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreClientRequest $request)
     {
         $organisation = $request->user()->currentOrganisation();
 
-        abort_unless($organisation, 403, 'No organisation found for user.');
-
-        $validated = $request->validate([
-                                            'name' => ['required', 'string', 'max:255'],
-                                            'contact_name' => ['nullable', 'string', 'max:255'],
-                                            'contact_email' => ['nullable', 'email', 'max:255'],
-                                            'status' => ['nullable', Rule::in(['active', 'archived'])],
-                                        ]);
-
-        $client = Client::query()->create([
-                                              ...$validated,
-                                              'organisation_id' => $organisation->id,
-                                              'status' => $validated['status'] ?? 'active',
-                                          ]);
+        $client = Client::create([
+                                     ...$request->validated(),
+                                     'organisation_id' => $organisation->id,
+                                     'status' => $data['status'] ?? 'active',
+                                 ]);
 
         return response()->json([
-                                    'client' => $client,
+                                    'client' => new ClientResource($client),
                                 ], 201);
     }
 
-    public function show(Request $request, Client $client): JsonResponse
+    public function show(Request $request, Client $client)
     {
-        $this->ensureClientBelongsToCurrentOrganisation($request, $client);
+        $organisation = $request->user()->currentOrganisation();
+
+        abort_unless($client->organisation_id === $organisation->id, 404);
 
         return response()->json([
-                                    'client' => $client,
+                                    'client' => new ClientResource($client),
                                 ]);
     }
 
-    public function update(Request $request, Client $client): JsonResponse
+    public function update(UpdateClientRequest $request, Client $client)
     {
-        $this->ensureClientBelongsToCurrentOrganisation($request, $client);
+        $organisation = $request->user()->currentOrganisation();
 
-        $validated = $request->validate([
-                                            'name' => ['sometimes', 'required', 'string', 'max:255'],
-                                            'contact_name' => ['nullable', 'string', 'max:255'],
-                                            'contact_email' => ['nullable', 'email', 'max:255'],
-                                            'status' => ['sometimes', Rule::in(['active', 'archived'])],
-                                        ]);
+        abort_unless($client->organisation_id === $organisation->id, 404);
 
-        $client->update($validated);
+        $client->update($request->validated());
 
         return response()->json([
-                                    'client' => $client->refresh(),
+                                    'client' => new ClientResource($client->fresh()),
                                 ]);
     }
 
-    public function destroy(Request $request, Client $client): JsonResponse
+    public function destroy(Request $request, Client $client)
     {
-        $this->ensureClientBelongsToCurrentOrganisation($request, $client);
+        $organisation = $request->user()->currentOrganisation();
+
+        abort_unless($client->organisation_id === $organisation->id, 404);
 
         $client->delete();
 
-        return response()->json([
-                                    'message' => 'Client deleted successfully.',
-                                ]);
+        return response()->noContent();
     }
 
     private function ensureClientBelongsToCurrentOrganisation(Request $request, Client $client): void
