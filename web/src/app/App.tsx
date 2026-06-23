@@ -1,5 +1,7 @@
 import "../App.css";
 
+import { AppLayout } from '../components/layout/AppLayout';
+
 import { useEffect, useState } from 'react'; //runtime value
 import type { FormEvent } from 'react'; //TypeScript-only type
 import { getCurrentOrganisation } from '../features/organisations/organisationApi';
@@ -7,12 +9,14 @@ import { createClient, getClients } from '../features/clients/clientApi';
 import { createProject, getProjects } from '../features/projects/projectApi';
 import { createTask, getTasks } from '../features/tasks/taskApi';
 import { getDashboard } from "../features/dashboard/dashboardApi";
+
 import {
     getMe,
     login,
     logout,
     register,
 } from '../features/auth/authApi';
+
 import {
     addTeamMember,
     getTeam,
@@ -26,6 +30,7 @@ import type { Project } from '../features/projects/types';
 import type { Task } from '../features/tasks/types'
 import type { DashboardSummary } from "../features/dashboard/types";
 import type { TeamMember, TeamRole } from "../features/team/types";
+import type { View } from './types';
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
@@ -82,6 +87,8 @@ function App() {
 
     const canManageTeam = ['owner', 'admin'].includes(currentRole ?? '');
     const canChangeRoles = currentRole === 'owner';
+
+    const [currentView, setCurrentView] = useState<View>('dashboard');
 
     function saveToken(nextToken: string) {
         localStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
@@ -345,57 +352,15 @@ function App() {
 
     if (user) {
         return (
-            <div className="app-shell">
-                <aside className="sidebar">
-                    <div className="sidebar-brand">
-                        <div className="sidebar-brand-title">Client Project Portal</div>
-                        <div className="sidebar-brand-subtitle">
-                            {organisation?.name ?? 'SaaS Workspace'}
-                        </div>
-                    </div>
-
-                    <nav className="sidebar-nav" aria-label="Main navigation">
-                        <a className="sidebar-nav-item active" href="#dashboard">
-                            Dashboard
-                        </a>
-                        <a className="sidebar-nav-item" href="#clients">
-                            Clients
-                        </a>
-                        <a className="sidebar-nav-item" href="#projects">
-                            Projects
-                        </a>
-                        <a className="sidebar-nav-item" href="#tasks">
-                            Tasks
-                        </a>
-                        <a className="sidebar-nav-item" href="#team">
-                            Team
-                        </a>
-                    </nav>
-
-                    <div className="sidebar-footer">
-                        MVP build · Laravel + React
-                    </div>
-                </aside>
-
-                <div className="main-area">
-                    <header className="topbar">
-                        <div>
-                            <h1 className="topbar-title">Dashboard</h1>
-                            <p className="page-subtitle">
-                                Manage your client work from one workspace.
-                            </p>
-                        </div>
-
-                        <div className="topbar-user">
-            <span>
-              Signed in as <strong>{user.name}</strong>
-            </span>
-
-                            <button type="button" className="button ghost" onClick={handleLogout}>
-                                Logout
-                            </button>
-                        </div>
-                    </header>
+            <AppLayout
+                currentView={currentView}
+                onNavigate={setCurrentView}
+                canManageTeam={canManageTeam}
+                userName={user.name}
+                organisationName={organisation?.name}
+                role={currentRole}
+                onLogout={handleLogout}
+            >{
 
                     <main className="page" id="dashboard">
                         <section className="page-header">
@@ -838,9 +803,8 @@ function App() {
                                 )}
                             </section>
                         </section>
-                    </main>
-                </div>
-            </div>
+                    </main>}
+            </AppLayout>
         );
     }
 
