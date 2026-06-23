@@ -195,11 +195,6 @@ button {
   gap: 1.5rem;
 }
 
-.form-grid {
-  display: grid;
-  gap: 0.85rem;
-}
-
 .form-row {
   display: grid;
   gap: 0.35rem;
@@ -410,5 +405,38 @@ button {
   .metrics-grid,
   .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar-nav a {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+    font-weight: 600;
+  }
+
+  .sidebar-nav a:hover,
+  .sidebar-nav a.active {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .main-content {
+    min-width: 0;
+  }
+
+  .content-card {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-grid {
+    margin-bottom: 1.5rem;
+  }
+
+  .list-stack {
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 }

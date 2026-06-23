@@ -1,16 +1,12 @@
-import type { View } from '../../app/types';
+import { NavLink } from 'react-router-dom';
+
+import { viewRoutes } from '../../app/types';
 
 type SidebarProps = {
-    currentView: string;
-    onNavigate: (view: View) => void;
     canManageTeam: boolean;
 };
 
-export function Sidebar({
-                            currentView,
-                            onNavigate,
-                            canManageTeam,
-                        }: SidebarProps) {
+export function Sidebar({ canManageTeam }: SidebarProps) {
     return (
         <aside className="sidebar">
             <div className="brand">
@@ -22,46 +18,41 @@ export function Sidebar({
             </div>
 
             <nav className="sidebar-nav">
-                <button
-                    type="button"
-                    className={currentView === 'dashboard' ? 'active' : ''}
-                    onClick={() => onNavigate('dashboard')}
+                <NavLink
+                    to={viewRoutes.dashboard}
+                    className={({ isActive }) => (isActive ? 'active' : '')}
                 >
                     Dashboard
-                </button>
+                </NavLink>
 
-                <button
-                    type="button"
-                    className={currentView === 'clients' ? 'active' : ''}
-                    onClick={() => onNavigate('clients')}
+                <NavLink
+                    to={viewRoutes.clients}
+                    className={({ isActive }) => (isActive ? 'active' : '')}
                 >
                     Clients
-                </button>
+                </NavLink>
 
-                <button
-                    type="button"
-                    className={currentView === 'projects' ? 'active' : ''}
-                    onClick={() => onNavigate('projects')}
+                <NavLink
+                    to={viewRoutes.projects}
+                    className={({ isActive }) => (isActive ? 'active' : '')}
                 >
                     Projects
-                </button>
+                </NavLink>
 
-                <button
-                    type="button"
-                    className={currentView === 'tasks' ? 'active' : ''}
-                    onClick={() => onNavigate('tasks')}
+                <NavLink
+                    to={viewRoutes.tasks}
+                    className={({ isActive }) => (isActive ? 'active' : '')}
                 >
                     Tasks
-                </button>
+                </NavLink>
 
                 {canManageTeam && (
-                    <button
-                        type="button"
-                        className={currentView === 'team' ? 'active' : ''}
-                        onClick={() => onNavigate('team')}
+                    <NavLink
+                        to={viewRoutes.team}
+                        className={({ isActive }) => (isActive ? 'active' : '')}
                     >
                         Team
-                    </button>
+                    </NavLink>
                 )}
             </nav>
         </aside>

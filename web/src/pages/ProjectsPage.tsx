@@ -35,7 +35,7 @@ export function ProjectsPage({
                                  onCreateProject,
 }: ProjectsPageProps) {
     return (
-        <section className="card" id="projects">
+        <section className="content-card" id="projects">
             <div className="card-header">
                 <div>
                     <h3 className="card-title">Projects</h3>

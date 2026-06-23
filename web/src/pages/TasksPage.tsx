@@ -41,7 +41,7 @@ export function TasksPage({
                               onCreateTask,
 }: TasksPageProps) {
     return (
-        <section className="card" id="tasks">
+        <section className="content-card" id="tasks">
             <div className="card-header">
                 <div>
                     <h3 className="card-title">Tasks</h3>

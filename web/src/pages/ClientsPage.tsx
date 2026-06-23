@@ -25,7 +25,7 @@ export function ClientsPage ({
     onCreateClient,
 } : ClientsPageProps) {
     return (
-        <section className="card" id="clients">
+        <section className="content-card" id="clients">
             <div className="card-header">
                 <div>
                     <h3 className="card-title">Clients</h3>

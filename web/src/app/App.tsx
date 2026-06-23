@@ -35,7 +35,8 @@ import type { Project } from '../features/projects/types';
 import type { Task } from '../features/tasks/types'
 import type { DashboardSummary } from "../features/dashboard/types";
 import type { TeamMember, TeamRole } from "../features/team/types";
-import type { View } from './types';
+
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 const TOKEN_STORAGE_KEY = 'cpp_auth_token';
 
@@ -92,8 +93,6 @@ function App() {
 
     const canManageTeam = ['owner', 'admin'].includes(currentRole ?? '');
     const canChangeRoles = currentRole === 'owner';
-
-    const [currentView, setCurrentView] = useState<View>('dashboard');
 
     function saveToken(nextToken: string) {
         localStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
@@ -358,87 +357,115 @@ function App() {
     if (user) {
         return (
             <AppLayout
-                currentView={currentView}
-                onNavigate={setCurrentView}
                 canManageTeam={canManageTeam}
                 userName={user.name}
                 organisationName={organisation?.name}
                 role={currentRole}
                 onLogout={handleLogout}
             >
-                {currentView == 'dashboard' && (
-                    <DashboardPage
-                        dashboard={dashboardSummary}
-                        organisation={organisation}
+                <Routes>
+                    <Route
+                        path="/"
+                        element={<Navigate to="/dashboard" replace />}
                     />
-                )}
 
-                {currentView == 'clients' && (
-                    <ClientsPage
-                        clients={clients}
-                        clientName={clientName}
-                        clientContactName={clientContactName}
-                        clientContactEmail={clientContactEmail}
-                        clientError={clientError}
-                        onClientNameChange={setClientName}
-                        onClientContactNameChange={setClientContactName}
-                        onClientContactEmailChange={setClientContactEmail}
-                        onCreateClient={handleCreateClient}
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <DashboardPage
+                                dashboard={dashboardSummary}
+                                organisation={organisation}
+                            />
+                        }
                     />
-                )}
 
-                {currentView == 'projects' && (
-                    <ProjectsPage
-                        projects={projects}
-                        clients={clients}
-                        projectClientId={projectClientId}
-                        projectName={projectName}
-                        projectDescription={projectDescription}
-                        projectDueDate={projectDueDate}
-                        projectError={projectError}
-                        onProjectClientIdChange={setProjectClientId}
-                        onProjectNameChange={setProjectName}
-                        onProjectDescriptionChange={setProjectDescription}
-                        onProjectDueDateChange={setProjectDueDate}
-                        onCreateProject={handleCreateProject}
+                    <Route
+                        path="/clients"
+                        element={
+                            <ClientsPage
+                                clients={clients}
+                                clientName={clientName}
+                                clientContactName={clientContactName}
+                                clientContactEmail={clientContactEmail}
+                                clientError={clientError}
+                                onClientNameChange={setClientName}
+                                onClientContactNameChange={setClientContactName}
+                                onClientContactEmailChange={setClientContactEmail}
+                                onCreateClient={handleCreateClient}
+                            />
+                        }
                     />
-                )}
 
-                {currentView == 'tasks' && (
-                    <TasksPage
-                        tasks={tasks}
-                        projects={projects}
-                        taskProjectId={taskProjectId}
-                        taskTitle={taskTitle}
-                        taskDescription={taskDescription}
-                        taskPriority={taskPriority}
-                        taskDueDate={taskDueDate}
-                        taskError={taskError}
-                        onTaskProjectIdChange={setTaskProjectId}
-                        onTaskTitleChange={setTaskTitle}
-                        onTaskDescriptionChange={setTaskDescription}
-                        onTaskPriorityChange={setTaskPriority}
-                        onTaskDueDateChange={setTaskDueDate}
-                        onCreateTask={handleCreateTask}
+                    <Route
+                        path="/projects"
+                        element={
+                            <ProjectsPage
+                                projects={projects}
+                                clients={clients}
+                                projectClientId={projectClientId}
+                                projectName={projectName}
+                                projectDescription={projectDescription}
+                                projectDueDate={projectDueDate}
+                                projectError={projectError}
+                                onProjectClientIdChange={setProjectClientId}
+                                onProjectNameChange={setProjectName}
+                                onProjectDescriptionChange={setProjectDescription}
+                                onProjectDueDateChange={setProjectDueDate}
+                                onCreateProject={handleCreateProject}
+                            />
+                        }
                     />
-                )}
 
-                {currentView == 'team' && canManageTeam && (
-                    <TeamPage
-                        teamMembers={teamMembers}
-                        currentUser={user}
-                        teamEmail={teamEmail}
-                        teamRole={teamRole}
-                        teamError={teamError}
-                        canChangeRoles={canChangeRoles}
-                        onTeamEmailChange={setTeamEmail}
-                        onTeamRoleChange={setTeamRole}
-                        onAddTeamMember={handleAddTeamMember}
-                        onChangeTeamRole={handleChangeTeamRole}
-                        onRemoveTeamMember={handleRemoveTeamMember}
+                    <Route
+                        path="/tasks"
+                        element={
+                            <TasksPage
+                                tasks={tasks}
+                                projects={projects}
+                                taskProjectId={taskProjectId}
+                                taskTitle={taskTitle}
+                                taskDescription={taskDescription}
+                                taskPriority={taskPriority}
+                                taskDueDate={taskDueDate}
+                                taskError={taskError}
+                                onTaskProjectIdChange={setTaskProjectId}
+                                onTaskTitleChange={setTaskTitle}
+                                onTaskDescriptionChange={setTaskDescription}
+                                onTaskPriorityChange={setTaskPriority}
+                                onTaskDueDateChange={setTaskDueDate}
+                                onCreateTask={handleCreateTask}
+                            />
+                        }
                     />
-                )}
 
+                    <Route
+                        path="/team"
+                        element={
+                            canManageTeam ? (
+                                <TeamPage
+                                    teamMembers={teamMembers}
+                                    currentUser={user}
+                                    teamEmail={teamEmail}
+                                    teamRole={teamRole}
+                                    teamError={teamError}
+                                    canChangeRoles={canChangeRoles}
+                                    onTeamEmailChange={setTeamEmail}
+                                    onTeamRoleChange={setTeamRole}
+                                    onAddTeamMember={handleAddTeamMember}
+                                    onChangeTeamRole={handleChangeTeamRole}
+                                    onRemoveTeamMember={handleRemoveTeamMember}
+                                />
+                            ) : (
+                                <Navigate to="/dashboard" replace />
+                            )
+                        }
+                    />
+
+                    <Route
+                        path="*"
+                        element={<Navigate to="/dashboard" replace />}
+                    />
+                </Routes>
             </AppLayout>
         );
     }

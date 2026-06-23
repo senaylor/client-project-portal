@@ -1,12 +1,10 @@
-import type { View } from '../../app/types';
+import type { ReactNode } from 'react';
 
-import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
+import { Sidebar } from './Sidebar';
+import { Topbar } from './Topbar';
 
 type AppLayoutProps = {
-    children: React.ReactNode;
-    currentView: string;
-    onNavigate: (view: View) => void;
+    children: ReactNode;
     canManageTeam: boolean;
     userName?: string;
     organisationName?: string;
@@ -16,8 +14,6 @@ type AppLayoutProps = {
 
 export function AppLayout({
                               children,
-                              currentView,
-                              onNavigate,
                               canManageTeam,
                               userName,
                               organisationName,
@@ -26,11 +22,7 @@ export function AppLayout({
                           }: AppLayoutProps) {
     return (
         <div className="app-shell">
-            <Sidebar
-                currentView={currentView}
-                onNavigate={onNavigate}
-                canManageTeam={canManageTeam}
-            />
+            <Sidebar canManageTeam={canManageTeam} />
 
             <main className="main-content">
                 <Topbar
