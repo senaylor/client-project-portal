@@ -1,1 +1,41 @@
 .env.prod.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Laravel
+api/vendor/
+api/storage/*.key
+api/storage/framework/cache/data/
+api/storage/framework/sessions/
+api/storage/framework/views/
+api/storage/logs/*.log
+api/bootstrap/cache/*.php
+
+# Node / React
+web/node_modules/
+web/dist/
+web/.vite/
+
+# Test / coverage
+api/coverage/
+web/coverage/
+
+# Docker / local volumes
+docker-data/
+*.pid
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
