@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
+use App\Http\Resources\TaskResource;
+use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,11 +31,11 @@ class TaskController extends Controller
                      ->get();
 
         return response()->json([
-                                    'tasks' => $tasks,
+                                    'tasks' => TaskResource::collection($tasks),
                                 ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreTaskRequest $request)
     {
         $organisation = $request->user()->currentOrganisation();
 
@@ -80,7 +84,7 @@ class TaskController extends Controller
                     ]);
 
         return response()->json([
-                                    'task' => $task,
+                                    'task' => new TaskResource($task),
                                 ], 201);
     }
 
@@ -95,11 +99,11 @@ class TaskController extends Controller
                     ]);
 
         return response()->json([
-                                    'task' => $task,
+                                    'task' => new TaskResource($task),
                                 ]);
     }
 
-    public function update(Request $request, Task $task): JsonResponse
+    public function update(UpdateTaskRequest $request, Task $task)
     {
         $this->ensureTaskBelongsToCurrentOrganisation($request, $task);
 
@@ -140,19 +144,17 @@ class TaskController extends Controller
                     ]);
 
         return response()->json([
-                                    'task' => $task->refresh(),
+                                    'task' => new TaskResource($task->fresh(['project.client'])),
                                 ]);
     }
 
-    public function destroy(Request $request, Task $task): JsonResponse
+    public function destroy(Request $request, Task $task)
     {
         $this->ensureTaskBelongsToCurrentOrganisation($request, $task);
 
         $task->delete();
 
-        return response()->json([
-                                    'message' => 'Task deleted successfully.',
-                                ]);
+        return response()->noContent();
     }
 
     private function ensureTaskBelongsToCurrentOrganisation(Request $request, Task $task): void
