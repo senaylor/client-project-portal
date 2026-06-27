@@ -1,5 +1,3 @@
-.env.prod.local
-
 # OS / editor
 .DS_Store
 Thumbs.db
@@ -10,6 +8,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+.env.prod.local
 
 # Laravel
 api/vendor/
