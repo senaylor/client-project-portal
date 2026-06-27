@@ -124,7 +124,7 @@ class TaskTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->deleteJson("/api/tasks/{$task->id}")
-             ->assertOk();
+             ->assertNoContent();
 
         $this->assertDatabaseMissing('tasks', [
             'id' => $task->id,

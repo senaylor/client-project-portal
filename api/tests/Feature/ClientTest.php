@@ -99,7 +99,7 @@ class ClientTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->deleteJson("/api/clients/{$client->id}")
-             ->assertOk();
+             ->assertNoContent();
 
         $this->assertDatabaseMissing('clients', [
             'id' => $client->id,

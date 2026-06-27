@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProjectResource;
 use App\Models\Client;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+
+use App\Http\Requests\StoreProjectRequest;
+use App\Http\Requests\UpdateProjectRequest;
 
 class ProjectController extends Controller
 {
@@ -16,49 +21,38 @@ class ProjectController extends Controller
         $organisation = $request->user()->currentOrganisation();
 
         $projects = Project::query()
-                           ->with('client:id,name')
+                           ->with('client')
                            ->where('organisation_id', $organisation?->id)
                            ->latest()
                            ->get();
 
         return response()->json([
-                                    'projects' => $projects,
+                                    'projects' => ProjectResource::collection($projects),
                                 ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreProjectRequest $request)
     {
         $organisation = $request->user()->currentOrganisation();
 
-        abort_unless($organisation, 403, 'No organisation found for user.');
-
-        $validated = $request->validate([
-                                            'client_id' => ['required', 'integer'],
-                                            'name' => ['required', 'string', 'max:255'],
-                                            'description' => ['nullable', 'string'],
-                                            'status' => ['nullable', Rule::in(['active', 'on_hold', 'completed', 'archived'])],
-                                            'due_date' => ['nullable', 'date'],
-                                        ]);
+        $data = $request->validated();
 
         $client = Client::query()
                         ->where('organisation_id', $organisation->id)
-                        ->whereKey($validated['client_id'])
-                        ->firstOrFail();
+                        ->findOrFail($data['client_id']);
 
-        $project = Project::query()->create([
-                                                'organisation_id' => $organisation->id,
-                                                'client_id' => $client->id,
-                                                'created_by' => $request->user()->id,
-                                                'name' => $validated['name'],
-                                                'description' => $validated['description'] ?? null,
-                                                'status' => $validated['status'] ?? 'active',
-                                                'due_date' => $validated['due_date'] ?? null,
-                                            ]);
+        $project = Project::create([
+                                       ...$data,
+                                       'client_id' => $client->id,
+                                       'organisation_id' => $organisation->id,
+                                       'created_by' => $request->user()->id,
+                                       'status' => $data['status'] ?? 'active',
+                                   ]);
 
-        $project->load('client:id,name');
+        $project->load('client');
 
         return response()->json([
-                                    'project' => $project,
+                                    'project' => new ProjectResource($project),
                                 ], 201);
     }
 
@@ -66,10 +60,10 @@ class ProjectController extends Controller
     {
         $this->ensureProjectBelongsToCurrentOrganisation($request, $project);
 
-        $project->load('client:id,name');
+        $project->load('client');
 
         return response()->json([
-                                    'project' => $project,
+                                    'project' => new ProjectResource($project),
                                 ]);
     }
 
@@ -96,22 +90,20 @@ class ProjectController extends Controller
 
         $project->update($validated);
 
-        $project->load('client:id,name');
+        $project->load('client');
 
         return response()->json([
-                                    'project' => $project->refresh(),
+                                    'project' => new ProjectResource($project->refresh()),
                                 ]);
     }
 
-    public function destroy(Request $request, Project $project): JsonResponse
+    public function destroy(Request $request, Project $project): Response
     {
         $this->ensureProjectBelongsToCurrentOrganisation($request, $project);
 
         $project->delete();
 
-        return response()->json([
-                                    'message' => 'Project deleted successfully.',
-                                ]);
+        return response()->noContent();
     }
 
     private function ensureProjectBelongsToCurrentOrganisation(Request $request, Project $project): void

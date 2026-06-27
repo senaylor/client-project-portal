@@ -119,7 +119,7 @@ class ProjectTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->deleteJson("/api/projects/{$project->id}")
-             ->assertOk();
+             ->assertNoContent();
 
         $this->assertDatabaseMissing('projects', [
             'id' => $project->id,
