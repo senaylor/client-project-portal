@@ -8,8 +8,10 @@ RUN apk add --no-cache \
     git \
     icu-dev \
     libzip-dev \
+    nginx \
     oniguruma-dev \
     postgresql-dev \
+    supervisor \
     unzip \
     zip \
     && docker-php-ext-install \
@@ -34,15 +36,16 @@ RUN composer install \
 
 COPY . .
 
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/supervisord.conf /etc/supervisord.conf
+
 RUN composer dump-autoload --optimize \
     && php artisan config:clear \
     && php artisan route:clear \
-    && php artisan view:clear
+    && php artisan view:clear \
+    && mkdir -p /run/nginx \
+    && chown -R www-data:www-data storage bootstrap/cache
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+EXPOSE 8080
 
-USER www-data
-
-EXPOSE 9000
-
-CMD ["php-fpm"]
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
