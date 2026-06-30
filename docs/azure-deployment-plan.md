@@ -18,6 +18,10 @@ Azure Container Apps is suitable here because it runs containerized applications
 
 ### Resource group
 
+## Deployed Azure Resources
+
+The 1st manual Azure deployment has been completed successfully
+
 Suggested name:
 
 ```txt 
@@ -35,8 +39,14 @@ cae-client-project-portal-dev
 API Container App:
 ca-client-project-portal-api-dev
 
+Port:
+8080
+
 Web Container App:
 ca-client-project-portal-web-dev
+
+Port:
+80
 
 API Health endpoint:
 https://ca-client-project-portal-api-dev.blueocean-8b176a9e.australiaeast.azurecontainerapps.io/api/health
