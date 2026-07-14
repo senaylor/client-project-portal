@@ -1,4 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+
+const API_BASE_URL =
+    rawApiBaseUrl && rawApiBaseUrl.trim().length > 0
+        ? rawApiBaseUrl.replace(/\/$/, '')
+        : 'http://localhost:8002/api';
 
 type ApiOptions = {
     method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -10,7 +15,9 @@ export async function apiRequest<T>(
     path: string,
     options: ApiOptions = {},
 ): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const normalisedPath = path.startsWith('/') ? path : `/${path}`;
+
+    const response = await fetch(`${API_BASE_URL}${normalisedPath}`, {
         method: options.method ?? 'GET',
         headers: {
             Accept: 'application/json',

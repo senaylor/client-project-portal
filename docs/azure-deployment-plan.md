@@ -22,6 +22,15 @@ Azure Container Apps is suitable here because it runs containerized applications
 
 The 1st manual Azure deployment has been completed successfully
 
+## Automated deployment
+
+GitHub Actions now deploys the application to Azure when changes are merged into `main`.
+
+Workflow:
+
+```txt
+.github/workflows/deploy-azure.yml
+
 Suggested name:
 
 ```txt 
