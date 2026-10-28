@@ -1,4 +1,5 @@
 import type { FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 
 import type { Project } from '../features/projects/types';
 import type { Task } from '../features/tasks/types';
@@ -167,6 +168,13 @@ export function TasksPage({
                                     Due {task.due_date.slice(0, 10)}
                                 </div>
                             )}
+                            <Link
+                                to={`/tasks/${task.id}/edit`}
+                                className="button-secondary"
+                                aria-label={`Edit ${task.title}`}
+                            >
+                                Edit
+                            </Link>
                         </li>
                     ))}
                 </ul>

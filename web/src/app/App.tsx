@@ -6,6 +6,7 @@ import { ClientsPage } from "../pages/ClientsPage";
 import { ProjectsPage } from "../pages/ProjectsPage";
 import { TasksPage } from "../pages/TasksPage";
 import { TeamPage } from "../pages/TeamPage";
+import { EditTaskPage } from "../pages/EditTaskPage";
 
 import { useEffect, useState } from 'react'; //runtime value
 import type { FormEvent } from 'react'; //TypeScript-only type
@@ -354,6 +355,14 @@ function App() {
         }
     }
 
+    function handleTaskUpdated(updatedTask: Task) {
+        setTasks((currentTasks) =>
+            currentTasks.map((task) =>
+                task.id === updatedTask.id ? updatedTask : task,
+            ),
+        );
+    }
+
     if (user) {
         return (
             <AppLayout
@@ -459,6 +468,15 @@ function App() {
                                 <Navigate to="/dashboard" replace />
                             )
                         }
+                    />
+
+                    <Route
+                        path="/tasks/:taskId/edit"
+                        element={<EditTaskPage
+                            token={token}
+                            projects={projects}
+                            onTaskUpdated={handleTaskUpdated}
+                        />}
                     />
 
                     <Route

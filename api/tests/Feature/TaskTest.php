@@ -130,4 +130,40 @@ class TaskTest extends TestCase
             'id' => $task->id,
         ]);
     }
+
+    public function test_user_can_save_all_edit_task_fields(): void
+    {
+        // Arrangement: create a user and their task and another projec they own
+        [$user, $organisation] = $this->createUSerWithOrganisation();
+
+        $task = $this->createTaskForOrganisation($organisation);
+        $newProject = $this->createProjectForOrganisation($organisation);
+
+        Sanctum::actingAs($user);
+
+        $payload = [
+            'project_id' => $newProject->id,
+            'title' => 'Waiting for client approval',
+            'description' => 'Client needs to approve revised design',
+            'status' => 'blocked',
+            'priority' => 'high',
+            'due_date' => now()->addWeek()->toDateString(),
+        ];
+
+        // Act: Send the edit forms update request
+        $response = $this->patchJson("/api/tasks/{$task->id}",$payload);
+
+        // Assert: check the response and the persisted task
+        $response
+            ->assertOk()
+            ->assertJsonPath('task.id', $task->id)
+            ->assertJsonPath('task.project.id', $newProject->id)
+            ->assertJsonFragment($payload);
+
+        $this->assertDatabaseHas('tasks',[
+            'id' => $task->id,
+            'organisation_id' => $organisation->id,
+            ...$payload,
+        ]);
+    }
 }
