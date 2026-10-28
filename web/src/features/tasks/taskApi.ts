@@ -7,6 +7,12 @@ export function getTasks(token: string) {
     });
 }
 
+export function getTask(token: string, taskId: number) {
+    return apiRequest<TaskResponse>(`/tasks/${taskId}`, {
+        token,
+    })
+}
+
 export function createTask(
     token: string,
     payload: {
@@ -21,6 +27,25 @@ export function createTask(
 ) {
     return apiRequest<TaskResponse>('/tasks', {
         method: 'POST',
+        token,
+        body: payload,
+    });
+}
+
+export function updateTask(
+    token: string,
+    taskId: number,
+    payload: {
+        project_id: number;
+        title: string;
+        description: string | null;
+        status: TaskStatus;
+        priority: TaskPriority;
+        due_date: string | null;
+    },
+) {
+    return apiRequest<TaskResponse>(`/tasks/${taskId}`, {
+        method: 'PATCH',
         token,
         body: payload,
     });
